@@ -18,6 +18,12 @@ export async function ensureBucketExists(): Promise<void> {
   try {
     await s3Client.send(new HeadBucketCommand({ Bucket: env.s3.bucket }));
   } catch {
-    await s3Client.send(new CreateBucketCommand({ Bucket: env.s3.bucket }));
+    try {
+      await s3Client.send(new CreateBucketCommand({ Bucket: env.s3.bucket }));
+    } catch (error: any) {
+      console.warn(
+        `[S3 Warning] S3 endpoint at ${env.s3.endpoint} unreachable (${error?.message ?? 'ECONNREFUSED'}). Certificate/file upload features will need S3/MinIO.`
+      );
+    }
   }
 }
