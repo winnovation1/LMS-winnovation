@@ -9,6 +9,7 @@ import type {
   CourseListPageDto,
   CourseProgressDto,
   EnrollmentDto,
+  EventDto,
   ProblemStatementDto,
   RazorpayCheckoutDto,
   TeamSprintsDto,
@@ -17,7 +18,6 @@ import type {
 import { apiRequest, ApiClientError } from '../../lib/apiClient';
 import { openRazorpayCheckout } from '../../lib/razorpay';
 import {
-  MOCK_CALENDAR_ENTRIES,
   MOCK_EVENTS,
   MOCK_FEATURED_EVENT,
   MOCK_MENTOR,
@@ -486,10 +486,44 @@ export function useEvents() {
   return useQuery({ queryKey: ['student', 'events'], queryFn: () => Promise.resolve(MOCK_EVENTS) });
 }
 
+type CalendarEntryItem = {
+  id: string;
+  title: string;
+  subtitle: string;
+  timeLabel: string;
+  location: string;
+  date: string;
+  category: 'event';
+  categoryLabel: string;
+};
+function eventToCalendarEntry(e: EventDto): CalendarEntryItem {
+  const start = new Date(e.scheduledAt);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const date = start.getFullYear() + '-' + pad(start.getMonth() + 1) + '-' + pad(start.getDate());
+  return {
+    id: e.id,
+    title: e.title,
+    subtitle: e.collegeName ?? e.hostedByEmail,
+    timeLabel: start.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
+    location: e.venue ?? 'Online',
+    date,
+    category: 'event',
+    categoryLabel: 'Event',
+  };
+}
+
 export function useCalendarEntries() {
   return useQuery({
     queryKey: ['student', 'calendar-entries'],
-    queryFn: () => Promise.resolve(MOCK_CALENDAR_ENTRIES),
+    queryFn: async () => {
+      try {
+        const r = await apiRequest<{ events: EventDto[] }>('/api/events');
+        return (r.events ?? []).map(eventToCalendarEntry);
+      } catch (err) {
+        console.warn('Could not fetch calendar events:', err);
+        return [] as CalendarEntryItem[];
+      }
+    },
   });
 }
 
