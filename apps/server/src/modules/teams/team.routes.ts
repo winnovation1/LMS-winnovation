@@ -3,7 +3,7 @@ import { Role } from '@forge-loom/shared-types';
 import { authenticate } from '../../middleware/authenticate.js';
 import { authorize } from '../../middleware/authorize.js';
 import { asyncHandler } from '../../utils/asyncHandler.js';
-import { create, list, update } from './team.controller.js';
+import { create, list, myStudents, update } from './team.controller.js';
 import { getTeamSprints } from '../sprints/sprint.controller.js';
 
 export const teamRouter = Router();
@@ -26,4 +26,10 @@ teamRouter.patch(
   authenticate,
   authorize(Role.CollegeAdmin, Role.Trainer),
   asyncHandler(update)
+);
+teamRouter.get(
+  '/my-students',
+  authenticate,
+  authorize(Role.Mentor),
+  asyncHandler(myStudents)
 );

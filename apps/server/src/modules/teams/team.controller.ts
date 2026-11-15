@@ -20,6 +20,55 @@ function requireParam(req: Request, name: string): string {
   return value;
 }
 
+export async function myStudents(req: Request, res: Response): Promise<void> {
+  const user = requireUser(req);
+  const profiles = await teamService.getMentorAssignedStudents(user.userId);
+  
+  const students = profiles.map((p) => {
+    const primaryTeam = p.teamMemberships[0]?.team;
+    const sprints = primaryTeam?.sprints ?? [];
+    const avgProgress = sprints.length > 0
+      ? Math.round(sprints.reduce((acc, s) => acc + s.progressPercent, 0) / sprints.length)
+      : 0;
+      
+    const status = avgProgress >= 50 ? 'on_track' : avgProgress > 0 ? 'at_risk' : 'not_started';
+
+    return {
+      id: p.userId,
+      name: p.name,
+      team: primaryTeam?.name ?? 'No Team',
+      course: primaryTeam?.problemStatement?.title ?? p.course ?? 'Citadel Project',
+      score: p.builderScore,
+      lastActivityLabel: 'Recent',
+      status,
+    };
+  });
+
+  const profileMap: Record<string, any> = {};
+  for (const p of profiles) {
+    const primaryTeam = p.teamMemberships[0]?.team;
+    const sprints = primaryTeam?.sprints ?? [];
+    const avgProgress = sprints.length > 0
+      ? Math.round(sprints.reduce((acc, s) => acc + s.progressPercent, 0) / sprints.length)
+      : 0;
+
+    profileMap[p.userId] = {
+      id: p.userId,
+      name: p.name,
+      team: primaryTeam?.name ?? 'No Team',
+      courses: [
+        {
+          name: primaryTeam?.problemStatement?.title ?? p.course ?? 'Citadel Project',
+          progressPercent: avgProgress,
+        },
+      ],
+      upcomingSessionLabel: 'No upcoming session',
+      feedbackHistory: [],
+    };
+  }
+
+  res.json({ students, profiles: profileMap });
+}
 export async function create(req: Request, res: Response): Promise<void> {
   const user = requireUser(req);
   if (!user.collegeId) {

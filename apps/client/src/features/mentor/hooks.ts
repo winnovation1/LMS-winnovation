@@ -6,22 +6,15 @@ import type {
   TeamSprintsDto,
 } from '@forge-loom/shared-types';
 import { apiRequest } from '../../lib/apiClient';
-import {
-  MOCK_ASSIGNED_STUDENTS,
-  MOCK_AT_RISK_STUDENTS,
-  MOCK_MENTEE_VIEW_STATS,
-  MOCK_PROGRESS_SNAPSHOT,
-  MOCK_STUDENT_PROFILES,
-  MOCK_TEAM_VIEW_STATS,
-} from './mockData';
 import type {
+  AssignedStudent,
   MentorSession,
+  StudentProfileDetail,
   TeamDetail,
   TeamSummary,
   TodaySession,
   UpcomingSessionHighlight,
 } from './types';
-
 // Thin useQuery wrappers around static mock data — same pattern as the
 // Student feature. Swapping to the real API later means changing each
 // queryFn, not the pages that consume these hooks. `useMentorTeams` and
@@ -57,16 +50,36 @@ function averageProgress(view: TeamSprintsDto): number {
 }
 
 export function useMentorTeamStats() {
+  const { data: teams } = useMentorTeams();
+  const { data: students } = useAssignedStudents();
+  const { data: todaySessions } = useTodaySessions();
+
   return useQuery({
-    queryKey: ['mentor', 'team-stats'],
-    queryFn: () => Promise.resolve(MOCK_TEAM_VIEW_STATS),
+    queryKey: ['mentor', 'team-stats', teams?.length, students?.length, todaySessions?.length],
+    queryFn: () => ({
+      studentsAssigned: students?.length ?? 0,
+      teamsMentoring: teams?.length ?? 0,
+      sessionsToday: todaySessions?.length ?? 0,
+      pendingAssignments: 0,
+    }),
   });
 }
 
 export function useMentorMenteeStats() {
+  const { data: students } = useAssignedStudents();
+  const { data: sessions } = useMentorSessions();
+
   return useQuery({
-    queryKey: ['mentor', 'mentee-stats'],
-    queryFn: () => Promise.resolve(MOCK_MENTEE_VIEW_STATS),
+    queryKey: ['mentor', 'mentee-stats', students?.length, sessions?.length],
+    queryFn: () => {
+      const all = sessions ?? [];
+      return {
+        activeMentees: students?.length ?? 0,
+        upcomingSessions: all.filter((s) => s.status === 'Upcoming').length,
+        sessionsCompleted: all.filter((s) => s.status === 'Completed').length,
+        averageRating: 5.0,
+      };
+    },
   });
 }
 
@@ -147,16 +160,44 @@ export function useMentorTeams() {
 }
 
 export function useAtRiskStudents() {
+  const { data: students } = useAssignedStudents();
+
   return useQuery({
-    queryKey: ['mentor', 'at-risk'],
-    queryFn: () => Promise.resolve(MOCK_AT_RISK_STUDENTS),
+    queryKey: ['mentor', 'at-risk', students],
+    queryFn: () => {
+      if (!students || students.length === 0) return [];
+      return students
+        .filter((s) => s.status === 'at_risk')
+        .map((s) => ({
+          id: s.id,
+          name: s.name,
+          team: s.team,
+          subject: s.course,
+          overdueCount: 1,
+        }));
+    },
   });
 }
 
 export function useProgressSnapshot() {
+  const { data: students } = useAssignedStudents();
+
   return useQuery({
-    queryKey: ['mentor', 'progress-snapshot'],
-    queryFn: () => Promise.resolve(MOCK_PROGRESS_SNAPSHOT),
+    queryKey: ['mentor', 'progress-snapshot', students],
+    queryFn: () => {
+      if (!students || students.length === 0) {
+        return { onTrackPercent: 0, atRiskPercent: 0, notStartedPercent: 0 };
+      }
+      const total = students.length;
+      const onTrack = students.filter((s) => s.status === 'on_track').length;
+      const atRisk = students.filter((s) => s.status === 'at_risk').length;
+      const notStarted = students.filter((s) => s.status === 'not_started').length;
+      return {
+        onTrackPercent: Math.round((onTrack / total) * 100),
+        atRiskPercent: Math.round((atRisk / total) * 100),
+        notStartedPercent: Math.round((notStarted / total) * 100),
+      };
+    },
   });
 }
 
@@ -210,14 +251,18 @@ export function useUpcomingSessionHighlight() {
 export function useAssignedStudents() {
   return useQuery({
     queryKey: ['mentor', 'assigned-students'],
-    queryFn: () => Promise.resolve(MOCK_ASSIGNED_STUDENTS),
+    queryFn: () =>
+      apiRequest<{ students: AssignedStudent[] }>('/api/teams/my-students')
+        .then((r) => r.students),
   });
 }
 
 export function useStudentProfiles() {
   return useQuery({
     queryKey: ['mentor', 'student-profiles'],
-    queryFn: () => Promise.resolve(MOCK_STUDENT_PROFILES),
+    queryFn: () =>
+      apiRequest<{ profiles: Record<string, StudentProfileDetail> }>('/api/teams/my-students')
+        .then((r) => r.profiles),
   });
 }
 
