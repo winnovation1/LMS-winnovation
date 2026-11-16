@@ -7,7 +7,7 @@ const envFile =
     : process.env.NODE_ENV === 'test'
       ? '.env.test'
       : '.env.local';
-config({ path: path.resolve(process.cwd(), envFile) });
+config({ path: path.resolve(process.cwd(), '../../', envFile) });
 
 function required(name: string): string {
   const value = process.env[name];
@@ -33,12 +33,11 @@ export const env = {
     keyId: required('RAZORPAY_KEY_ID'),
     keySecret: required('RAZORPAY_KEY_SECRET'),
   },
-  s3: {
-    endpoint: required('S3_ENDPOINT'),
-    bucket: required('S3_BUCKET'),
-    accessKey: required('S3_ACCESS_KEY'),
-    secretKey: required('S3_SECRET_KEY'),
-  },
+cloudinary: {
+  cloudName: required('CLOUDINARY_CLOUD_NAME'),
+  apiKey: required('CLOUDINARY_API_KEY'),
+  apiSecret: required('CLOUDINARY_API_SECRET'),
+},
   resend: {
     apiKey: process.env.RESEND_API_KEY ?? '',
     contactEmail: process.env.CONTACT_EMAIL ?? 'forge@winnovation.org',
