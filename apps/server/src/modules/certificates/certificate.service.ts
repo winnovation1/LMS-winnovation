@@ -1,9 +1,9 @@
+
+import type { UploadApiResponse } from 'cloudinary';
 import { randomBytes } from 'node:crypto';
-import { GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import type { Certificate } from '@prisma/client';
 import { env } from '../../config/env.js';
-import { s3Client } from '../../config/s3.js';
+import { cloudinary } from '../../config/cloudinary.js';
 import { prisma } from '../../config/prisma.js';
 import { ApiError } from '../../utils/ApiError.js';
 import { canManageCourseContent, requireCourse } from '../courses/courseAccess.js';
@@ -40,7 +40,9 @@ export async function issueCertificate(
     throw new ApiError(409, 'A certificate has already been issued for this enrollment');
   }
 
-  const profile = await prisma.studentProfile.findUnique({ where: { userId: enrollment.studentId } });
+  const profile = await prisma.studentProfile.findUnique({
+    where: { userId: enrollment.studentId },
+  });
   if (!profile) {
     throw new ApiError(404, 'Student profile not found');
   }
@@ -58,15 +60,32 @@ export async function issueCertificate(
     verifyUrl,
   });
 
-  const pdfKey = `certificates/${token}.pdf`;
-  await s3Client.send(
-    new PutObjectCommand({
-      Bucket: env.s3.bucket,
-      Key: pdfKey,
-      Body: pdfBuffer,
-      ContentType: 'application/pdf',
-    })
+  // Upload the PDF as a private raw asset in Cloudinary.
+ const uploadResult = await new Promise<UploadApiResponse>((resolve, reject) => {
+  const uploadStream = cloudinary.uploader.upload_stream(
+    {
+      resource_type: 'raw',
+      type: 'private',
+      public_id: `certificates/${token}.pdf`,
+      overwrite: false,
+    },
+    (error, result) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+
+      if (!result) {
+        reject(new Error('Cloudinary did not return an upload result'));
+        return;
+      }
+
+      resolve(result);
+    }
   );
+
+  uploadStream.end(pdfBuffer);
+});
 
   const certificate = await prisma.certificate.create({
     data: {
@@ -76,7 +95,7 @@ export async function issueCertificate(
       courseTitle: course.title,
       issuingBody,
       token,
-      pdfKey,
+      pdfKey: uploadResult.public_id,
       issuedAt,
     },
   });
@@ -97,7 +116,10 @@ export async function issueCertificate(
 }
 
 export async function listMyCertificates(studentId: string): Promise<Certificate[]> {
-  return prisma.certificate.findMany({ where: { studentId }, orderBy: { issuedAt: 'desc' } });
+  return prisma.certificate.findMany({
+    where: { studentId },
+    orderBy: { issuedAt: 'desc' },
+  });
 }
 
 export interface CertificateVerificationResult {
@@ -110,12 +132,18 @@ export interface CertificateVerificationResult {
 
 // Deliberately returns only non-sensitive confirmation data — this is the
 // public, unauthenticated, rate-limited endpoint.
-export async function verifyCertificate(token: string): Promise<CertificateVerificationResult> {
+export async function verifyCertificate(
+  token: string
+): Promise<CertificateVerificationResult> {
   const certificate = await prisma.certificate.findUnique({ where: { token } });
   if (!certificate) {
     return { valid: false };
   }
-  const profile = await prisma.studentProfile.findUnique({ where: { userId: certificate.studentId } });
+
+  const profile = await prisma.studentProfile.findUnique({
+    where: { userId: certificate.studentId },
+  });
+
   return {
     valid: true,
     studentName: profile?.name ?? 'Unknown',
@@ -126,6 +154,14 @@ export async function verifyCertificate(token: string): Promise<CertificateVerif
 }
 
 export async function getCertificateDownloadUrl(certificate: Certificate): Promise<string> {
-  const command = new GetObjectCommand({ Bucket: env.s3.bucket, Key: certificate.pdfKey });
-  return getSignedUrl(s3Client, command, { expiresIn: 3600 });
+  return cloudinary.utils.private_download_url(
+    certificate.pdfKey,
+    'pdf',
+    {
+      resource_type: 'raw',
+      type: 'private',
+      expires_at: Math.floor(Date.now() / 1000) + 3600,
+      attachment: true,
+    }
+  );
 }
