@@ -112,16 +112,18 @@ export function CalendarPage() {
   const [customEntries, setCustomEntries] = useState<CalendarEntry[]>([]);
   const [viewMode, setViewMode] = useState<'month' | 'week' | 'day'>('month');
 
-  // Seed calendar date anchors to May 2026
-  const [year, setYear] = useState(2026);
-  const [month, setMonth] = useState(4); // May (0-indexed)
-  const [selectedDate, setSelectedDate] = useState('2026-05-28');
-
+// Start the calendar on today's real date
+  const today = new Date();
+  const pad2 = (n: number) => String(n).padStart(2, '0');
+  const todayKey = today.getFullYear() + '-' + pad2(today.getMonth() + 1) + '-' + pad2(today.getDate());
+  const [year, setYear] = useState(today.getFullYear());
+  const [month, setMonth] = useState(today.getMonth());
+  const [selectedDate, setSelectedDate] = useState(todayKey);
   // Add Event Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newTitle, setNewTitle] = useState('');
   const [newSubtitle, setNewSubtitle] = useState('');
-  const [newDate, setNewDate] = useState('2026-05-28');
+  const [newDate, setNewDate] = useState(todayKey);
   const [newTime, setNewTime] = useState('10:00 AM – 11:30 AM');
   const [newLocation, setNewLocation] = useState('Online');
   const [newCategory, setNewCategory] = useState<CalendarCategory>('course');
@@ -174,7 +176,7 @@ export function CalendarPage() {
         day,
         dateKey,
         isCurrentMonth: false,
-        isToday: dateKey === '2026-05-28',
+        isToday: dateKey === todayKey,
       });
     }
 
@@ -185,7 +187,7 @@ export function CalendarPage() {
         day,
         dateKey,
         isCurrentMonth: true,
-        isToday: dateKey === '2026-05-28',
+        isToday: dateKey === todayKey,
       });
     }
 
@@ -199,7 +201,7 @@ export function CalendarPage() {
         day,
         dateKey,
         isCurrentMonth: false,
-        isToday: dateKey === '2026-05-28',
+        isToday: dateKey === todayKey,
       });
     }
 
@@ -213,9 +215,9 @@ export function CalendarPage() {
   }
 
   function goToToday() {
-    setYear(2026);
-    setMonth(4);
-    setSelectedDate('2026-05-28');
+   setYear(today.getFullYear());
+   setMonth(today.getMonth());
+   setSelectedDate(todayKey);
   }
 
   function handleCloseModal() {
@@ -528,7 +530,7 @@ export function CalendarPage() {
                   {gridCells.map((cell) => {
                     const dayEntries = entriesByDate.get(cell.dateKey) ?? [];
                     const isSelected = cell.dateKey === selectedDate;
-                    const isAnchorDate = cell.dateKey === '2026-05-28';
+                    const isAnchorDate = cell.dateKey === todayKey;
 
                     // Special Anchor Card (May 28 in Reference Screenshot)
                     if (isSelected || isAnchorDate) {
