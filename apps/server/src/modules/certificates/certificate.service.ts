@@ -60,6 +60,13 @@ export async function issueCertificate(
     verifyUrl,
   });
 
+  if (!env.cloudinary.cloudName || !env.cloudinary.apiKey || !env.cloudinary.apiSecret) {
+    throw new ApiError(
+      503,
+      'Certificate generation requires Cloudinary storage. Please configure CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET in your .env file.'
+    );
+  }
+
   // Upload the PDF as a private raw asset in Cloudinary.
  const uploadResult = await new Promise<UploadApiResponse>((resolve, reject) => {
   const uploadStream = cloudinary.uploader.upload_stream(
