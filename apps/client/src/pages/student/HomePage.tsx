@@ -44,37 +44,7 @@ export function HomePage() {
 
   const firstName = user?.email.split('@')[0] ?? 'student1';
 
-  // Fallback / default courses to guarantee the exact 4 reference items
-  const allCourseCards = [
-    {
-      id: 'course-1',
-      title: 'Full Stack Web Development',
-      status: 'In Progress',
-      progress: 65,
-      variant: 'deep-blue',
-    },
-    {
-      id: 'course-2',
-      title: 'UI/UX Design Fundamentals',
-      status: 'Not Started',
-      progress: 0,
-      variant: 'light-swoosh',
-    },
-    {
-      id: 'course-3',
-      title: 'Data Structures & Algorithms',
-      status: 'In Progress',
-      progress: 40,
-      variant: 'navy-sphere',
-    },
-    {
-      id: 'course-4',
-      title: 'Product Management Essentials',
-      status: 'Not Started',
-      progress: 0,
-      variant: 'sky-gradient',
-    },
-  ];
+ const allCourseCards = (coursesData ?? []).map((c, i) => ({ id: c.id, title: c.name, status: c.status === 'in_progress' ? 'In Progress' : c.status === 'completed' ? 'Completed' : 'Not Started', progress: c.progressPercent, variant: ['deep-blue', 'light-swoosh', 'navy-sphere', 'sky-gradient'][i % 4] }));
 
   const filteredCourses = allCourseCards.filter((c) => {
     if (courseFilter === 'in_progress') return c.status === 'In Progress';
@@ -299,7 +269,7 @@ export function HomePage() {
                       : 'glass-filter-tab-inactive'
                   }`}
                 >
-                  In Progress (2)
+                  In Progress ({allCourseCards.filter((c)=>c.status=== 'In Progress').length})
                 </button>
                 <button
                   type="button"
@@ -310,7 +280,7 @@ export function HomePage() {
                       : 'glass-filter-tab-inactive'
                   }`}
                 >
-                  Not Started (2)
+                  Not Started ({allCourseCards.filter((c) => c.status === 'Not Started').length})
                 </button>
               </div>
             </div>
