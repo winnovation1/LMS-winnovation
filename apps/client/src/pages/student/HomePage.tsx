@@ -23,6 +23,7 @@ import {
   useStudentMentor,
   useStudentStats,
   useStudentUpcomingEvents,
+  useCalendarEntries,
 } from '../../features/student/hooks';
 import { PageLoading } from '../../components/ui/PageLoading';
 
@@ -33,6 +34,7 @@ export function HomePage() {
   const { data: eventsData, isLoading: eventsLoading } = useStudentUpcomingEvents();
   const { data: mentorData, isLoading: mentorLoading } = useStudentMentor();
   const { data: featuredData, isLoading: featuredLoading } = useFeaturedEvent();
+  const { data:calendarData} =useCalendarEntries();
 
   const [registered, setRegistered] = useState(false);
   const [courseFilter, setCourseFilter] = useState<'all' | 'in_progress' | 'not_started'>('all');
@@ -52,33 +54,7 @@ export function HomePage() {
     return true;
   });
 
-  // Upcoming events matching the reference
-  const upcomingEvents = [
-    {
-      id: 'evt-1',
-      month: 'MAY',
-      day: '28',
-      title: 'Frontend Sprint Review',
-      timeLocation: '10:00 AM – 11:30 AM · Online',
-      icon: Video,
-    },
-    {
-      id: 'evt-2',
-      month: 'MAY',
-      day: '30',
-      title: 'Mentor Session',
-      timeLocation: '2:00 PM – 3:00 PM · Virtual Room 2',
-      icon: Video,
-    },
-    {
-      id: 'evt-3',
-      month: 'JUN',
-      day: '2',
-      title: 'UI/UX Workshop',
-      timeLocation: '11:00 AM – 1:00 PM · Seminar Hall',
-      icon: Building2,
-    },
-  ];
+ const upcomingEvents = (calendarData ?? []).filter((e) => e.date >= new Date().toISOString().slice(0, 10)).sort((a, b) => a.date.localeCompare(b.date)).slice(0, 3).map((e) => ({ id: e.id, month: new Date(e.date + 'T00:00:00').toLocaleString('en-US', { month: 'short' }).toUpperCase(), day: String(Number(e.date.slice(8, 10))), title: e.title, timeLocation: e.timeLabel + ' - ' + e.location, icon: Video }));
 
   return (
     <div className="w-full max-w-[1520px] mx-auto flex flex-col xl:flex-row gap-7">
