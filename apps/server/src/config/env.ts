@@ -7,7 +7,16 @@ const envFile =
     : process.env.NODE_ENV === 'test'
       ? '.env.test'
       : '.env.local';
-config({ path: path.resolve(process.cwd(), envFile) });
+
+// Load from cwd, root or apps/server
+for (const p of [
+  path.resolve(process.cwd(), envFile),
+  path.resolve(process.cwd(), 'apps/server', envFile),
+  path.resolve(process.cwd(), '.env'),
+  path.resolve(process.cwd(), 'apps/server', '.env'),
+]) {
+  config({ path: p });
+}
 
 function required(name: string): string {
   const value = process.env[name];
@@ -33,11 +42,10 @@ export const env = {
     keyId: required('RAZORPAY_KEY_ID'),
     keySecret: required('RAZORPAY_KEY_SECRET'),
   },
-  s3: {
-    endpoint: required('S3_ENDPOINT'),
-    bucket: required('S3_BUCKET'),
-    accessKey: required('S3_ACCESS_KEY'),
-    secretKey: required('S3_SECRET_KEY'),
+  cloudinary: {
+    cloudName: process.env.CLOUDINARY_CLOUD_NAME ?? '',
+    apiKey: process.env.CLOUDINARY_API_KEY ?? '',
+    apiSecret: process.env.CLOUDINARY_API_SECRET ?? '',
   },
   resend: {
     apiKey: process.env.RESEND_API_KEY ?? '',

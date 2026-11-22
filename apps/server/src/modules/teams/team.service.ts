@@ -117,6 +117,36 @@ function canManageTeam(team: Team, viewer: AuthenticatedUser): boolean {
   return false;
 }
 
+export async function getMentorAssignedStudents(mentorUserId: string) {
+  const mentorProfile = await prisma.mentorProfile.findUnique({
+    where: { userId: mentorUserId },
+  });
+
+  const profiles = await prisma.studentProfile.findMany({
+    where: {
+      OR: [
+        ...(mentorProfile ? [{ mentorId: mentorProfile.id }] : []),
+        { teamMemberships: { some: { team: { mentorId: mentorUserId } } } },
+      ],
+    },
+    include: {
+      user: true,
+      teamMemberships: {
+        include: {
+          team: {
+            include: {
+              problemStatement: true,
+              sprints: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  return profiles;
+}
+
 export async function updateTeam(
   teamId: string,
   viewer: AuthenticatedUser,
