@@ -63,7 +63,7 @@ export function CoursesPage() {
     return { enrolled, inProgress, completed, upcoming, dropped, overallPercent };
   }, [courses]);
 
-const recentActivity =(courses ??[]).map((c) =>({ id: c.id, title:'Enrolled in course',course: c.name, timeAgo: c.updatedLabel, icon: BookOpen,color: 'bg-blue-50 text-[#2161F5] border border-blue-100/70'}));
+const recentActivity =(courses ??[]).map((c, i) =>({ id: c.id +'-' + i, title:'Enrolled in course',course: c.name, timeAgo: c.updatedLabel, icon: BookOpen,color: 'bg-blue-50 text-[#2161F5] border border-blue-100/70'}));
 
   if (coursesLoading) {
     return <PageLoading />;
@@ -218,9 +218,9 @@ const recentActivity =(courses ??[]).map((c) =>({ id: c.id, title:'Enrolled in c
           ) : (
             /* ACTIVE COURSES LIST (If courses exist) */
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {filteredCourses.map((course) => (
+              {filteredCourses.map((course,idx) => (
                 <Link
-                  key={course.id}
+                  key={course.id +'-' + idx}
                   to={`/student/courses/${course.id}`}
                   className="course-card forge-dashboard-card p-5 flex flex-col justify-between group hover:border-blue-200/80 transition-all"
                 >
