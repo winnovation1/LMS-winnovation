@@ -1,4 +1,5 @@
 import type { Request, Response } from 'express';
+import type { PostedProblemStatementDto } from '@forge-loom/shared-types';
 import { ApiError } from '../../utils/ApiError.js';
 import { createProblemStatementSchema } from './problemStatement.validation.js';
 import * as problemStatementService from './problemStatement.service.js';
@@ -36,6 +37,23 @@ export async function create(req: Request, res: Response): Promise<void> {
 export async function list(req: Request, res: Response): Promise<void> {
   const rows = await problemStatementService.listProblemStatements(req.user);
   res.json({ problemStatements: rows.map(toProblemStatementDto) });
+}
+
+export async function listMine(req: Request, res: Response): Promise<void> {
+  const user = requireUser(req);
+  const rows = await problemStatementService.listPostedBy(user.userId);
+  res.json({
+    problemStatements: rows.map(({ problemStatement, interestCount }): PostedProblemStatementDto => ({
+      ...toProblemStatementDto({
+        problemStatement,
+        bookmarked: false,
+        isMine: true,
+        interested: false,
+      }),
+      interestCount,
+      createdAt: problemStatement.createdAt.toISOString(),
+    })),
+  });
 }
 
 export async function interest(req: Request, res: Response): Promise<void> {

@@ -9,7 +9,8 @@ export type NotificationType =
   | 'milestone_reviewed'
   | 'investor_access_granted'
   | 'session_cancelled'
-  | 'certificate_issued';
+  | 'certificate_issued'
+  | 'hr_message';
 
 export async function createNotification(
   userId: string,

@@ -1,12 +1,16 @@
 import type { TalentSearchPageDto } from '@forge-loom/shared-types';
 import { prisma } from '../../config/prisma.js';
-import type { TalentSearchResult } from './talentPool.service.js';
+import { getViewerFlags, type TalentSearchResult } from './talentPool.service.js';
 
 export async function toTalentSearchPageDto(
+  hrUserId: string,
   result: TalentSearchResult
 ): Promise<TalentSearchPageDto> {
   const collegeIds = [...new Set(result.profiles.map((p) => p.collegeId).filter(Boolean))] as string[];
-  const colleges = await prisma.college.findMany({ where: { id: { in: collegeIds } } });
+  const [colleges, flags] = await Promise.all([
+    prisma.college.findMany({ where: { id: { in: collegeIds } } }),
+    getViewerFlags(hrUserId, result.profiles),
+  ]);
   const nameByCollegeId = new Map(colleges.map((c) => [c.id, c.name]));
 
   return {
@@ -19,6 +23,8 @@ export async function toTalentSearchPageDto(
       collegeName: profile.collegeId ? nameByCollegeId.get(profile.collegeId) : undefined,
       course: profile.course ?? undefined,
       linkedIn: profile.linkedIn ?? undefined,
+      shortlisted: flags.shortlistedIds.has(profile.id),
+      messaged: flags.messagedUserIds.has(profile.userId),
     })),
     nextCursor: result.nextCursor,
   };

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Bell, Calendar, CalendarX2, MessageSquare, Trophy, GraduationCap } from 'lucide-react';
+import { Bell, Briefcase, Calendar, CalendarX2, MessageSquare, Trophy, GraduationCap } from 'lucide-react';
 import type { NotificationDto, NotificationType } from '@forge-loom/shared-types';
 import {
   useMarkAllNotificationsRead,
@@ -14,6 +14,7 @@ const TYPE_ICON: Record<NotificationType, typeof Bell> = {
   investor_access_granted: Trophy,
   session_cancelled: CalendarX2,
   certificate_issued: GraduationCap,
+  hr_message: Briefcase,
 };
 
 function formatRelativeTime(iso: string): string {
