@@ -46,7 +46,7 @@ export function HomePage() {
 
   const firstName = user?.email.split('@')[0] ?? 'student1';
 
- const allCourseCards = (coursesData ?? []).map((c, i) => ({ id: c.id, title: c.name, status: c.status === 'in_progress' ? 'In Progress' : c.status === 'completed' ? 'Completed' : 'Not Started', progress: c.progressPercent, variant: ['deep-blue', 'light-swoosh', 'navy-sphere', 'sky-gradient'][i % 4] }));
+ const allCourseCards = (coursesData ?? []).map((c, i) => ({ id: c.id+'-'+i, title: c.name, status: c.status === 'in_progress' ? 'In Progress' : c.status === 'completed' ? 'Completed' : 'Not Started', progress: c.progressPercent, variant: ['deep-blue', 'light-swoosh', 'navy-sphere', 'sky-gradient'][i % 4] }));
 
   const filteredCourses = allCourseCards.filter((c) => {
     if (courseFilter === 'in_progress') return c.status === 'In Progress';
