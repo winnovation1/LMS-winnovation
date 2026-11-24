@@ -55,7 +55,7 @@ export function HomePage() {
   });
 
  const upcomingEvents = (calendarData ?? []).filter((e) => e.date >= new Date().toISOString().slice(0, 10)).sort((a, b) => a.date.localeCompare(b.date)).slice(0, 3).map((e) => ({ id: e.id, month: new Date(e.date + 'T00:00:00').toLocaleString('en-US', { month: 'short' }).toUpperCase(), day: String(Number(e.date.slice(8, 10))), title: e.title, timeLocation: e.timeLabel + ' - ' + e.location, icon: Video }));
-
+const featuredEvent = (calendarData ?? []).filter((e) => e.date >= new Date().toISOString().slice(0, 10)).sort((a, b) => a.date.localeCompare(b.date))[0];
   return (
     <div className="w-full max-w-[1520px] mx-auto flex flex-col xl:flex-row gap-7">
       {/* ================= LEFT / CENTER MAIN CONTENT ================= */}
@@ -475,14 +475,12 @@ export function HomePage() {
             {/* Title & Description */}
             <div className="relative z-10 mt-5">
               <h2 className="text-[26px] font-black tracking-tight text-white leading-tight">
-                Citadel 2.0
+               {featuredEvent?.title ??'No upcoming events'}
               </h2>
               <p className="text-[13.5px] font-semibold text-blue-100 mt-1">
-                Where Ideas Build Impact.
+                {featuredEvent?.subtitle ??'Check the calendar for events'}
               </p>
-              <p className="text-[12px] text-blue-100/90 mt-2.5 leading-relaxed font-normal">
-                Join us for an action-packed experience of innovation, collaboration and learning. Be a part of something bigger.
-              </p>
+              
             </div>
 
             {/* 2x2 Details Grid */}
@@ -490,7 +488,7 @@ export function HomePage() {
               <div className="flex flex-col">
                 <span className="flex items-center gap-1.5 font-bold text-white text-[12.5px]">
                   <Calendar size={13} className="text-blue-200" />
-                  5 Jun, 2026
+                  {featuredEvent?.date??'-'}
                 </span>
                 <span className="text-[11px] text-blue-200/80 mt-0.5 ml-4.5">Date</span>
               </div>
@@ -498,7 +496,7 @@ export function HomePage() {
               <div className="flex flex-col">
                 <span className="flex items-center gap-1.5 font-bold text-white text-[12.5px]">
                   <Clock size={13} className="text-blue-200" />
-                  9:30 AM – 10:30 AM
+                  {featuredEvent?.timeLabel ?? '-'}
                 </span>
                 <span className="text-[11px] text-blue-200/80 mt-0.5 ml-4.5">Time</span>
               </div>
@@ -506,18 +504,12 @@ export function HomePage() {
               <div className="flex flex-col">
                 <span className="flex items-center gap-1.5 font-bold text-white text-[12.5px]">
                   <MapPin size={13} className="text-blue-200" />
-                  Auditorium, Main Block
+                 {featuredEvent?.location ??'-'}
                 </span>
                 <span className="text-[11px] text-blue-200/80 mt-0.5 ml-4.5">Venue</span>
               </div>
 
-              <div className="flex flex-col">
-                <span className="flex items-center gap-1.5 font-bold text-white text-[12.5px]">
-                  <Users size={13} className="text-blue-200" />
-                  500+ Participants
-                </span>
-                <span className="text-[11px] text-blue-200/80 mt-0.5 ml-4.5">Participants</span>
-              </div>
+              
             </div>
           </div>
 
