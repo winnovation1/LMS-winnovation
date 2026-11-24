@@ -34,7 +34,7 @@ export function HomePage() {
   const { data: eventsData, isLoading: eventsLoading } = useStudentUpcomingEvents();
   const { data: mentorData, isLoading: mentorLoading } = useStudentMentor();
   const { data: featuredData, isLoading: featuredLoading } = useFeaturedEvent();
-  const { data:calendarData} =useCalendarEntries();
+  const { data: calendarData } = useCalendarEntries();
 
   const [registered, setRegistered] = useState(false);
   const [courseFilter, setCourseFilter] = useState<'all' | 'in_progress' | 'not_started'>('all');
@@ -46,7 +46,18 @@ export function HomePage() {
 
   const firstName = user?.email.split('@')[0] ?? 'student1';
 
- const allCourseCards = (coursesData ?? []).map((c, i) => ({ id: c.id+'-'+i, title: c.name, status: c.status === 'in_progress' ? 'In Progress' : c.status === 'completed' ? 'Completed' : 'Not Started', progress: c.progressPercent, variant: ['deep-blue', 'light-swoosh', 'navy-sphere', 'sky-gradient'][i % 4] }));
+  const allCourseCards = (coursesData ?? []).map((c, i) => ({
+    id: c.id + '-' + i,
+    title: c.name,
+    status:
+      c.status === 'in_progress'
+        ? 'In Progress'
+        : c.status === 'completed'
+          ? 'Completed'
+          : 'Not Started',
+    progress: c.progressPercent,
+    variant: ['deep-blue', 'light-swoosh', 'navy-sphere', 'sky-gradient'][i % 4],
+  }));
 
   const filteredCourses = allCourseCards.filter((c) => {
     if (courseFilter === 'in_progress') return c.status === 'In Progress';
@@ -54,8 +65,23 @@ export function HomePage() {
     return true;
   });
 
- const upcomingEvents = (calendarData ?? []).filter((e) => e.date >= new Date().toISOString().slice(0, 10)).sort((a, b) => a.date.localeCompare(b.date)).slice(0, 3).map((e) => ({ id: e.id, month: new Date(e.date + 'T00:00:00').toLocaleString('en-US', { month: 'short' }).toUpperCase(), day: String(Number(e.date.slice(8, 10))), title: e.title, timeLocation: e.timeLabel + ' - ' + e.location, icon: Video }));
-const featuredEvent = (calendarData ?? []).filter((e) => e.date >= new Date().toISOString().slice(0, 10)).sort((a, b) => a.date.localeCompare(b.date))[0];
+  const upcomingEvents = (calendarData ?? [])
+    .filter((e) => e.date >= new Date().toISOString().slice(0, 10))
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .slice(0, 3)
+    .map((e) => ({
+      id: e.id,
+      month: new Date(e.date + 'T00:00:00')
+        .toLocaleString('en-US', { month: 'short' })
+        .toUpperCase(),
+      day: String(Number(e.date.slice(8, 10))),
+      title: e.title,
+      timeLocation: e.timeLabel + ' - ' + e.location,
+      icon: Video,
+    }));
+  const featuredEvent = (calendarData ?? [])
+    .filter((e) => e.date >= new Date().toISOString().slice(0, 10))
+    .sort((a, b) => a.date.localeCompare(b.date))[0];
   return (
     <div className="w-full max-w-[1520px] mx-auto flex flex-col xl:flex-row gap-7">
       {/* ================= LEFT / CENTER MAIN CONTENT ================= */}
@@ -78,8 +104,10 @@ const featuredEvent = (calendarData ?? []).filter((e) => e.date >= new Date().to
           <div className="hidden lg:flex items-center gap-3 pl-4">
             <div className="w-[2px] h-9 bg-blue-500/70 rounded-full" />
             <div className="text-[12px] font-medium text-slate-500 leading-snug">
-              Small progress<br />
-              every day creates<br />
+              Small progress
+              <br />
+              every day creates
+              <br />
               big results.
             </div>
           </div>
@@ -102,20 +130,14 @@ const featuredEvent = (calendarData ?? []).filter((e) => e.date >= new Date().to
               <div className="text-[26px] sm:text-[28px] font-extrabold text-[#15213D] leading-none">
                 {stats?.coursesEnrolled ?? 6}
               </div>
-              <div className="text-[12px] font-medium text-[#617594] mt-1.5">
-                Courses Enrolled
-              </div>
+              <div className="text-[12px] font-medium text-[#617594] mt-1.5">Courses Enrolled</div>
             </div>
             {/* Sparkline Blue SVG */}
             <svg
               className="absolute right-3 bottom-3 w-16 h-8 pointer-events-none stroke-[#2161F5] fill-none opacity-80"
               viewBox="0 0 64 32"
             >
-              <path
-                d="M 0 24 Q 16 28 28 16 T 50 12 T 64 6"
-                strokeWidth="2"
-                strokeLinecap="round"
-              />
+              <path d="M 0 24 Q 16 28 28 16 T 50 12 T 64 6" strokeWidth="2" strokeLinecap="round" />
             </svg>
           </div>
 
@@ -134,20 +156,14 @@ const featuredEvent = (calendarData ?? []).filter((e) => e.date >= new Date().to
               <div className="text-[26px] sm:text-[28px] font-extrabold text-[#15213D] leading-none">
                 {stats?.tasksCompleted ?? 24}
               </div>
-              <div className="text-[12px] font-medium text-[#617594] mt-1.5">
-                Tasks Completed
-              </div>
+              <div className="text-[12px] font-medium text-[#617594] mt-1.5">Tasks Completed</div>
             </div>
             {/* Sparkline Green SVG */}
             <svg
               className="absolute right-3 bottom-3 w-16 h-8 pointer-events-none stroke-emerald-500 fill-none opacity-80"
               viewBox="0 0 64 32"
             >
-              <path
-                d="M 0 26 Q 18 26 30 18 T 52 14 T 64 8"
-                strokeWidth="2"
-                strokeLinecap="round"
-              />
+              <path d="M 0 26 Q 18 26 30 18 T 52 14 T 64 8" strokeWidth="2" strokeLinecap="round" />
             </svg>
           </div>
 
@@ -166,20 +182,14 @@ const featuredEvent = (calendarData ?? []).filter((e) => e.date >= new Date().to
               <div className="text-[26px] sm:text-[28px] font-extrabold text-[#15213D] leading-none">
                 {stats?.currentStreak ?? 7} days
               </div>
-              <div className="text-[12px] font-medium text-[#617594] mt-1.5">
-                Current Streak
-              </div>
+              <div className="text-[12px] font-medium text-[#617594] mt-1.5">Current Streak</div>
             </div>
             {/* Sparkline Orange SVG */}
             <svg
               className="absolute right-3 bottom-3 w-16 h-8 pointer-events-none stroke-amber-500 fill-none opacity-80"
               viewBox="0 0 64 32"
             >
-              <path
-                d="M 0 28 Q 16 22 32 20 T 52 10 T 64 6"
-                strokeWidth="2"
-                strokeLinecap="round"
-              />
+              <path d="M 0 28 Q 16 22 32 20 T 52 10 T 64 6" strokeWidth="2" strokeLinecap="round" />
             </svg>
           </div>
 
@@ -198,20 +208,14 @@ const featuredEvent = (calendarData ?? []).filter((e) => e.date >= new Date().to
               <div className="text-[26px] sm:text-[28px] font-extrabold text-[#15213D] leading-none">
                 {stats?.xpEarned ?? 1250}
               </div>
-              <div className="text-[12px] font-medium text-[#617594] mt-1.5">
-                XP Earned
-              </div>
+              <div className="text-[12px] font-medium text-[#617594] mt-1.5">XP Earned</div>
             </div>
             {/* Sparkline Purple SVG */}
             <svg
               className="absolute right-3 bottom-3 w-16 h-8 pointer-events-none stroke-purple-500 fill-none opacity-80"
               viewBox="0 0 64 32"
             >
-              <path
-                d="M 0 26 Q 16 26 30 18 T 50 14 T 64 4"
-                strokeWidth="2"
-                strokeLinecap="round"
-              />
+              <path d="M 0 26 Q 16 26 30 18 T 50 14 T 64 4" strokeWidth="2" strokeLinecap="round" />
             </svg>
           </div>
         </section>
@@ -220,18 +224,14 @@ const featuredEvent = (calendarData ?? []).filter((e) => e.date >= new Date().to
         <section className="forge-dashboard-card p-6 sm:p-7">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
             <div className="flex flex-wrap items-center gap-3">
-              <h2 className="text-[18px] sm:text-[19px] font-bold text-[#15213D]">
-                My Courses
-              </h2>
+              <h2 className="text-[18px] sm:text-[19px] font-bold text-[#15213D]">My Courses</h2>
               {/* Glassmorphic Filter Tabs */}
               <div className="glass-tab-container">
                 <button
                   type="button"
                   onClick={() => setCourseFilter('all')}
                   className={`glass-filter-tab ${
-                    courseFilter === 'all'
-                      ? 'glass-filter-tab-active'
-                      : 'glass-filter-tab-inactive'
+                    courseFilter === 'all' ? 'glass-filter-tab-active' : 'glass-filter-tab-inactive'
                   }`}
                 >
                   All ({allCourseCards.length})
@@ -245,7 +245,7 @@ const featuredEvent = (calendarData ?? []).filter((e) => e.date >= new Date().to
                       : 'glass-filter-tab-inactive'
                   }`}
                 >
-                  In Progress ({allCourseCards.filter((c)=>c.status=== 'In Progress').length})
+                  In Progress ({allCourseCards.filter((c) => c.status === 'In Progress').length})
                 </button>
                 <button
                   type="button"
@@ -292,7 +292,11 @@ const featuredEvent = (calendarData ?? []).filter((e) => e.date >= new Date().to
                         preserveAspectRatio="none"
                       >
                         <path d="M 0 40 C 30 10, 70 50, 100 20" strokeWidth="1.5" />
-                        <path d="M 20 0 C 40 40, 70 20, 100 50" strokeWidth="1" strokeDasharray="3 3" />
+                        <path
+                          d="M 20 0 C 40 40, 70 20, 100 50"
+                          strokeWidth="1"
+                          strokeDasharray="3 3"
+                        />
                       </svg>
                     </div>
                   )}
@@ -475,12 +479,11 @@ const featuredEvent = (calendarData ?? []).filter((e) => e.date >= new Date().to
             {/* Title & Description */}
             <div className="relative z-10 mt-5">
               <h2 className="text-[26px] font-black tracking-tight text-white leading-tight">
-               {featuredEvent?.title ??'No upcoming events'}
+                {featuredEvent?.title ?? 'No upcoming events'}
               </h2>
               <p className="text-[13.5px] font-semibold text-blue-100 mt-1">
-                {featuredEvent?.subtitle ??'Check the calendar for events'}
+                {featuredEvent?.subtitle ?? 'Check the calendar for events'}
               </p>
-              
             </div>
 
             {/* 2x2 Details Grid */}
@@ -488,7 +491,7 @@ const featuredEvent = (calendarData ?? []).filter((e) => e.date >= new Date().to
               <div className="flex flex-col">
                 <span className="flex items-center gap-1.5 font-bold text-white text-[12.5px]">
                   <Calendar size={13} className="text-blue-200" />
-                  {featuredEvent?.date??'-'}
+                  {featuredEvent?.date ?? '-'}
                 </span>
                 <span className="text-[11px] text-blue-200/80 mt-0.5 ml-4.5">Date</span>
               </div>
@@ -504,12 +507,10 @@ const featuredEvent = (calendarData ?? []).filter((e) => e.date >= new Date().to
               <div className="flex flex-col">
                 <span className="flex items-center gap-1.5 font-bold text-white text-[12.5px]">
                   <MapPin size={13} className="text-blue-200" />
-                 {featuredEvent?.location ??'-'}
+                  {featuredEvent?.location ?? '-'}
                 </span>
                 <span className="text-[11px] text-blue-200/80 mt-0.5 ml-4.5">Venue</span>
               </div>
-
-              
             </div>
           </div>
 
@@ -528,9 +529,7 @@ const featuredEvent = (calendarData ?? []).filter((e) => e.date >= new Date().to
         <div className="forge-dashboard-card p-6 flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-[15px] font-bold text-[#15213D]">
-                Mentor Assigned
-              </h2>
+              <h2 className="text-[15px] font-bold text-[#15213D]">Mentor Assigned</h2>
               <button
                 type="button"
                 className="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
@@ -554,7 +553,9 @@ const featuredEvent = (calendarData ?? []).filter((e) => e.date >= new Date().to
                 </p>
                 <div className="flex items-center gap-1 text-[11.5px] font-semibold text-amber-600 mt-1">
                   <Star size={12} className="fill-amber-400 text-amber-400" />
-                  <span>{mentorData?.rating ?? 4.9} ({mentorData?.reviewCount ?? 120}+ mentees)</span>
+                  <span>
+                    {mentorData?.rating ?? 4.9} ({mentorData?.reviewCount ?? 120}+ mentees)
+                  </span>
                 </div>
               </div>
             </div>
@@ -563,7 +564,8 @@ const featuredEvent = (calendarData ?? []).filter((e) => e.date >= new Date().to
             <div className="mt-4 rounded-xl bg-slate-50/90 border border-slate-100 p-3.5 flex items-start gap-2.5">
               <Quote size={15} className="text-slate-300 shrink-0 mt-0.5" />
               <p className="text-[11.5px] text-slate-600 italic leading-relaxed">
-                &ldquo;Great mentors don&apos;t just guide, they help you see your own potential.&rdquo;
+                &ldquo;Great mentors don&apos;t just guide, they help you see your own
+                potential.&rdquo;
               </p>
             </div>
           </div>
