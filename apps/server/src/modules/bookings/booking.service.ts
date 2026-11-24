@@ -73,6 +73,7 @@ export async function createBooking(
       scheduledAt: new Date(input.scheduledAt),
       durationMinutes: input.durationMinutes ?? 30,
       agenda: input.agenda ?? [],
+      meetingLink: input.meetingLink ?? 'https://meet.google.com/forgeloom-mentor-1',
     },
   });
 

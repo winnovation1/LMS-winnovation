@@ -137,6 +137,7 @@ enum NotificationType {
   investor_access_granted
   session_cancelled
   certificate_issued
+  hr_message
 }
 
 enum EventType {

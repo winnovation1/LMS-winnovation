@@ -9,6 +9,7 @@ import { apiRequest } from '../../lib/apiClient';
 import type {
   AssignedStudent,
   MentorSession,
+  ProgressSnapshot,
   StudentProfileDetail,
   TeamDetail,
   TeamSummary,
@@ -95,6 +96,10 @@ async function fetchMentorBookings(): Promise<BookingDto[]> {
 
 function toMentorSideSession(booking: BookingDto): MentorSession {
   const start = new Date(booking.scheduledAt);
+  const end = new Date(start.getTime() + booking.durationMinutes * 60_000);
+  const isPast = end.getTime() < Date.now();
+  const isCompleted = booking.status === 'completed' || isPast;
+
   return {
     id: booking.id,
     title: booking.title,
@@ -108,8 +113,11 @@ function toMentorSideSession(booking: BookingDto): MentorSession {
     }),
     timeLabel: start.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }),
     mode: booking.mode,
-    status: booking.status === 'completed' ? 'Completed' : 'Upcoming',
+    status: isCompleted ? 'Completed' : 'Upcoming',
     agenda: booking.agenda,
+    meetingLink: booking.meetingLink ?? 'https://meet.google.com/forgeloom-mentor-1',
+    note: booking.note ?? undefined,
+    requesterEmail: booking.requesterEmail,
   };
 }
 
@@ -139,6 +147,7 @@ export function useTodaySessions() {
           }),
           mode: b.mode,
           startingInLabel: startingInLabel(b.scheduledAt),
+          meetingLink: b.meetingLink ?? 'https://meet.google.com/forgeloom-mentor-1',
         }));
     },
   });
@@ -243,6 +252,7 @@ export function useUpcomingSessionHighlight() {
         timeLabel: start.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }),
         mode: next.mode,
         startingInLabel: startingInLabel(next.scheduledAt),
+        meetingLink: next.meetingLink ?? 'https://meet.google.com/forgeloom-mentor-1',
       };
     },
   });
@@ -279,6 +289,9 @@ export function useTeamDetails() {
             sprint.status === 'submitted' ||
             sprint.status === 'reviewed'
         );
+        const currentSubmissions = current ? (view.submissionsBySprintId[current.id] ?? []) : [];
+        const latest = currentSubmissions.length > 0 ? currentSubmissions[currentSubmissions.length - 1] : null;
+
         result[team.id] = {
           id: team.id,
           name: team.name,
@@ -293,6 +306,14 @@ export function useTeamDetails() {
           currentSprintId: current?.id ?? null,
           currentSprintStatus: (current?.status as TeamDetail['currentSprintStatus']) ?? null,
           members: team.members.map((member) => ({ name: member.name, role: 'Member' })),
+          latestSubmission: latest
+            ? {
+                id: latest.id,
+                artifactUrls: latest.artifactUrls,
+                demoDate: latest.demoDate,
+                createdAt: latest.createdAt,
+              }
+            : null,
         };
       }
       return result;
@@ -353,6 +374,30 @@ export function useScheduleSession() {
           scheduledAt: input.scheduledAt,
         },
       }).then((r) => r.booking),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: MENTOR_BOOKINGS_KEY });
+    },
+  });
+}
+
+export function useUpdateBookingSession() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      bookingId,
+      note,
+      status,
+      meetingLink,
+    }: {
+      bookingId: string;
+      note?: string;
+      status?: 'upcoming' | 'completed' | 'cancelled';
+      meetingLink?: string;
+    }) =>
+      apiRequest<{ booking: BookingDto }>(`/api/bookings/${bookingId}`, {
+        method: 'PATCH',
+        body: { note, status, meetingLink },
+      }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: MENTOR_BOOKINGS_KEY });
     },

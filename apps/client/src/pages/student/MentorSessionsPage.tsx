@@ -55,6 +55,18 @@ export function MentorSessionsPage() {
   const selected: MentorSession | undefined =
     sessions.find((s) => s.id === selectedId) ?? (filtered.length > 0 ? filtered[0] : undefined);
 
+  // Close modal on Escape key press
+  useEffect(() => {
+    if (!bookOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        handleCloseModal();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [bookOpen]);
+
   if (isLoading) {
     return <PageLoading />;
   }
@@ -87,18 +99,6 @@ export function MentorSessionsPage() {
     setTime('');
     setBookError(null);
   }
-
-  // Close modal on Escape key press
-  useEffect(() => {
-    if (!bookOpen) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        handleCloseModal();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [bookOpen]);
 
   return (
     <div className="relative min-h-screen pb-16">

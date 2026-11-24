@@ -6,6 +6,7 @@ export const createBookingSchema = z.object({
   scheduledAt: z.string().min(1),
   durationMinutes: z.number().int().min(5).optional(),
   agenda: z.array(z.string()).optional(),
+  meetingLink: z.string().optional(),
 });
 
 export const updateBookingSchema = z.object({

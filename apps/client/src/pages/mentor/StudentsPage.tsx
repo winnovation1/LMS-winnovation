@@ -125,6 +125,11 @@ export function StudentsPage() {
 
             <h3 className="mb-2 text-sm font-semibold text-slate-900">Feedback History</h3>
             <div className="flex flex-col divide-y divide-slate-100">
+              {(!selectedProfile?.feedbackHistory || selectedProfile.feedbackHistory.length === 0) && (
+                <p className="py-4 text-center text-xs text-slate-400">
+                  No feedback recorded yet.
+                </p>
+              )}
               {selectedProfile?.feedbackHistory.map((entry) => (
                 <div key={entry.dateLabel} className="py-3 first:pt-0 last:pb-0">
                   <div className="mb-1 flex items-center justify-between">

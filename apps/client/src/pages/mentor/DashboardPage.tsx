@@ -5,6 +5,7 @@ import {
   CalendarClock,
   ClipboardList,
   FileUp,
+  Layers,
   Megaphone,
   Star,
   Users,
@@ -119,26 +120,51 @@ export function DashboardPage() {
             </div>
 
             <Card>
-              <h2 className="mb-4 font-semibold text-slate-900">Today's Sessions</h2>
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="font-semibold text-slate-900">Today's Sessions</h2>
+                <Link
+                  to="/mentor/sessions"
+                  className="text-sm font-medium text-blue-600 hover:underline"
+                >
+                  View All
+                </Link>
+              </div>
               <div className="flex flex-col divide-y divide-slate-100">
+                {(!todaySessions || todaySessions.length === 0) && (
+                  <p className="py-4 text-center text-xs text-slate-400">
+                    No sessions scheduled for today.
+                  </p>
+                )}
                 {todaySessions?.map((session) => (
                   <div
                     key={session.id}
-                    className="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0"
+                    className="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0 hover:bg-slate-50 rounded-lg px-2 -mx-2 transition-colors group"
                   >
-                    <div>
-                      <p className="text-sm font-medium text-slate-800">{session.title}</p>
+                    <Link to="/mentor/sessions" className="flex-1">
+                      <p className="text-sm font-medium text-slate-800 group-hover:text-blue-600 transition-colors">
+                        {session.title}
+                      </p>
                       <p className="text-xs text-slate-500">{session.team}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-xs font-medium text-slate-700">{session.timeLabel}</p>
-                      <p className="text-xs text-slate-400">{session.startingInLabel}</p>
+                    </Link>
+                    <div className="flex items-center gap-3">
+                      <div className="text-right">
+                        <p className="text-xs font-medium text-slate-700">{session.timeLabel}</p>
+                        <p className="text-xs text-slate-400">{session.startingInLabel}</p>
+                      </div>
+                      <a
+                        href={session.meetingLink || 'https://meet.google.com/forgeloom-mentor-1'}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1 rounded-md bg-blue-50 border border-blue-200 px-2.5 py-1 text-xs font-semibold text-blue-700 hover:bg-blue-600 hover:text-white transition-colors"
+                      >
+                        <Video size={12} /> Start
+                      </a>
                     </div>
                   </div>
                 ))}
               </div>
             </Card>
-
+            
             <Card>
               <div className="mb-4 flex items-center justify-between">
                 <h2 className="font-semibold text-slate-900">My Teams</h2>
@@ -150,6 +176,11 @@ export function DashboardPage() {
                 </Link>
               </div>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                {(!teams || teams.length === 0) && (
+                  <p className="col-span-3 py-6 text-center text-xs text-slate-400">
+                    No teams assigned yet.
+                  </p>
+                )}
                 {teams?.map((team) => (
                   <Link
                     key={team.id}
@@ -173,7 +204,6 @@ export function DashboardPage() {
                 ))}
               </div>
             </Card>
-
             <Card>
               <h2 className="mb-4 font-semibold text-slate-900">Quick Actions</h2>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -183,17 +213,25 @@ export function DashboardPage() {
                     Schedule Session
                   </Button>
                 </Link>
-                <Button variant="secondary" className="w-full flex-col gap-1 py-3" disabled>
-                  <Video size={18} />
-                  Book a Room
-                </Button>
-                <Button variant="secondary" className="w-full flex-col gap-1 py-3" disabled>
-                  <Megaphone size={18} />
-                  Announcement
-                </Button>
-                <Button variant="secondary" className="w-full flex-col gap-1 py-3" disabled>
-                  <FileUp size={18} />
-                  Upload Resource
+                <Link to="/mentor/students">
+                  <Button variant="secondary" className="w-full flex-col gap-1 py-3">
+                    <Users size={18} />
+                    View Mentees
+                  </Button>
+                </Link>
+                <Link to="/mentor/teams">
+                  <Button variant="secondary" className="w-full flex-col gap-1 py-3">
+                    <Layers size={18} />
+                    My Teams
+                  </Button>
+                </Link>
+                <Button
+                  variant="secondary"
+                  className="w-full flex-col gap-1 py-3"
+                  onClick={() => setView('mentee')}
+                >
+                  <Star size={18} />
+                  Mentee View
                 </Button>
               </div>
             </Card>
@@ -211,6 +249,11 @@ export function DashboardPage() {
                 </Link>
               </div>
               <div className="flex flex-col divide-y divide-slate-100">
+                {(!atRisk || atRisk.length === 0) && (
+                  <p className="py-6 text-center text-xs text-slate-400">
+                    All students are currently on track!
+                  </p>
+                )}
                 {atRisk?.map((student) => (
                   <Link
                     key={student.id}
@@ -271,6 +314,11 @@ export function DashboardPage() {
                 <Bell size={16} /> Recent Notifications
               </h2>
               <div className="flex flex-col divide-y divide-slate-100">
+                {(!notifications || notifications.length === 0) && (
+                  <p className="py-6 text-center text-xs text-slate-400">
+                    No recent notifications.
+                  </p>
+                )}
                 {notifications?.map((note) => (
                   <div key={note.id} className="py-3 first:pt-0 last:pb-0">
                     <p className="text-sm text-slate-800">{note.title}</p>
@@ -318,6 +366,11 @@ export function DashboardPage() {
                 </Link>
               </div>
               <div className="flex flex-col divide-y divide-slate-100">
+                {(!teams || teams.length === 0) && (
+                  <p className="py-6 text-center text-xs text-slate-400">
+                    No mentee or teams assigned yet.
+                  </p>
+                )}
                 {teams?.map((team) => (
                   <Link
                     key={team.id}
@@ -355,9 +408,19 @@ export function DashboardPage() {
                 <Video size={14} /> {highlight?.mode}
               </div>
               <Badge tone="amber">{highlight?.startingInLabel}</Badge>
-              <Link to="/mentor/sessions">
-                <Button className="mt-4 w-full">View Full Schedule</Button>
-              </Link>
+              <div className="mt-4 flex gap-2">
+                <a
+                  href={highlight?.meetingLink || 'https://meet.google.com/forgeloom-mentor-1'}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-blue-600 px-3 py-2 text-xs font-semibold text-white shadow-sm hover:bg-blue-700 transition"
+                >
+                  <Video size={14} /> Start Meeting
+                </a>
+                <Link to="/mentor/sessions" className="flex-1">
+                  <Button variant="secondary" className="w-full text-xs">Schedule</Button>
+                </Link>
+              </div>
             </Card>
 
             <Card className="bg-gradient-to-br from-slate-900 to-blue-900 text-center text-white">

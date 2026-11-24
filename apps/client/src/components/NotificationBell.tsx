@@ -14,6 +14,7 @@ const TYPE_ICON: Record<NotificationType, typeof Bell> = {
   investor_access_granted: Trophy,
   session_cancelled: CalendarX2,
   certificate_issued: GraduationCap,
+  hr_message: MessageSquare,
 };
 
 function formatRelativeTime(iso: string): string {

@@ -425,6 +425,8 @@ function toMentorSession(booking: BookingDto): MentorSession {
   const start = new Date(booking.scheduledAt);
   const end = new Date(start.getTime() + booking.durationMinutes * 60_000);
   const fmtTime = (d: Date) => d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  const isPast = end.getTime() < Date.now();
+  const isCompleted = booking.status === 'completed' || isPast;
 
   return {
     id: booking.id,
@@ -441,7 +443,7 @@ function toMentorSession(booking: BookingDto): MentorSession {
     monthLabel: start.toLocaleDateString('en-US', { month: 'short' }).toUpperCase(),
     timeLabel: `${fmtTime(start)} – ${fmtTime(end)}`,
     mode: booking.mode,
-    status: booking.status === 'completed' ? 'Completed' : 'Upcoming',
+    status: isCompleted ? 'Completed' : 'Upcoming',
     agenda: booking.agenda,
     note: booking.note ?? '',
     meetingLink: booking.meetingLink ?? '#',
