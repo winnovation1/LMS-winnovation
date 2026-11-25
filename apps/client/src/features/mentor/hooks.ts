@@ -9,7 +9,6 @@ import { apiRequest } from '../../lib/apiClient';
 import type {
   AssignedStudent,
   MentorSession,
-  ProgressSnapshot,
   StudentProfileDetail,
   TeamDetail,
   TeamSummary,
@@ -112,6 +111,7 @@ function toMentorSideSession(booking: BookingDto): MentorSession {
       year: 'numeric',
     }),
     timeLabel: start.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }),
+    scheduledAt: booking.scheduledAt,
     mode: booking.mode,
     status: isCompleted ? 'Completed' : 'Upcoming',
     agenda: booking.agenda,
@@ -388,15 +388,17 @@ export function useUpdateBookingSession() {
       note,
       status,
       meetingLink,
+      scheduledAt,
     }: {
       bookingId: string;
       note?: string;
       status?: 'upcoming' | 'completed' | 'cancelled';
       meetingLink?: string;
+      scheduledAt?: string;
     }) =>
       apiRequest<{ booking: BookingDto }>(`/api/bookings/${bookingId}`, {
         method: 'PATCH',
-        body: { note, status, meetingLink },
+        body: { note, status, meetingLink, scheduledAt },
       }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: MENTOR_BOOKINGS_KEY });

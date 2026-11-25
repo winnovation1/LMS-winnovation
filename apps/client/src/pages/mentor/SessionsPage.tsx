@@ -12,7 +12,11 @@ import { Badge } from '../../components/ui/Badge';
 import { Tabs } from '../../components/ui/Tabs';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
+import { Modal } from '../../components/ui/Modal';
 import { PageLoading } from '../../components/ui/PageLoading';
+import { toLocalDateTimeInputs } from '../../lib/dateInputs';
+
+const DEFAULT_MEETING_LINK = 'https://meet.google.com/forgeloom-mentor-1';
 
 const TABS: { value: MentorSessionStatus; label: string }[] = [
   { value: 'Upcoming', label: 'Upcoming' },
@@ -47,6 +51,14 @@ export function SessionsPage() {
   const [customLink, setCustomLink] = useState('');
   const [copiedLink, setCopiedLink] = useState(false);
 
+  // Reschedule modal state
+  const [rescheduleOpen, setRescheduleOpen] = useState(false);
+  const [rescheduleDate, setRescheduleDate] = useState('');
+  const [rescheduleTime, setRescheduleTime] = useState('');
+  const [rescheduleError, setRescheduleError] = useState<string | null>(null);
+
+  const activeMeetingLink = selected?.meetingLink || DEFAULT_MEETING_LINK;
+
   // Sync attendance and meeting link state when selected session changes
   useEffect(() => {
     if (selected?.note && selected.note.includes('Attendance:')) {
@@ -55,8 +67,41 @@ export function SessionsPage() {
       setAttendanceSaved(false);
     }
     setIsEditingLink(false);
-    setCustomLink(selected?.meetingLink || 'https://meet.google.com/forgeloom-mentor-1');
+    setCustomLink(selected?.meetingLink || DEFAULT_MEETING_LINK);
   }, [selected?.id, selected?.note, selected?.meetingLink]);
+
+  function openRescheduleModal() {
+    if (!selected) return;
+    const { date: d, time: t } = toLocalDateTimeInputs(selected.scheduledAt);
+    setRescheduleDate(d);
+    setRescheduleTime(t);
+    setRescheduleError(null);
+    setRescheduleOpen(true);
+  }
+
+  async function handleRescheduleSubmit(event: FormEvent) {
+    event.preventDefault();
+    if (!selected || !rescheduleDate || !rescheduleTime) {
+      setRescheduleError('Please select both a date and a time.');
+      return;
+    }
+    const nextAt = new Date(`${rescheduleDate}T${rescheduleTime}`);
+    if (Number.isNaN(nextAt.getTime())) {
+      setRescheduleError('Please enter a valid date and time.');
+      return;
+    }
+    setRescheduleError(null);
+    try {
+      await updateBooking.mutateAsync({
+        bookingId: selected.id,
+        scheduledAt: nextAt.toISOString(),
+        status: 'upcoming',
+      });
+      setRescheduleOpen(false);
+    } catch {
+      setRescheduleError('Could not reschedule this session. Please try again.');
+    }
+  }
 
   async function handleSaveMeetingLink() {
     if (!selected || !customLink.trim()) return;
@@ -72,8 +117,7 @@ export function SessionsPage() {
   }
 
   function handleCopyLink() {
-    const link = selected?.meetingLink || 'https://meet.google.com/forgeloom-mentor-1';
-    navigator.clipboard.writeText(link);
+    navigator.clipboard.writeText(activeMeetingLink);
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 2000);
   }
@@ -354,11 +398,11 @@ export function SessionsPage() {
                   <div className="flex items-center gap-2 truncate">
                     <Video size={16} className="shrink-0 text-blue-600" />
                     <span className="truncate text-xs font-mono font-medium text-slate-700">
-                      {selected.meetingLink || 'https://meet.google.com/forgeloom-mentor-1'}
+                      {activeMeetingLink}
                     </span>
                   </div>
                   <a
-                    href={selected.meetingLink || 'https://meet.google.com/forgeloom-mentor-1'}
+                    href={activeMeetingLink}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-blue-700 active:scale-[0.99] shrink-0"
@@ -424,12 +468,17 @@ export function SessionsPage() {
 
             {selected.status === 'Upcoming' && (
               <div className="mt-6 flex gap-3 border-t border-slate-100 pt-4">
-                <Button variant="secondary" className="flex-1">
+                <Button variant="secondary" className="flex-1" onClick={openRescheduleModal}>
                   Reschedule
                 </Button>
-                <Button className="flex-1">
+                <a
+                  href={activeMeetingLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+                >
                   <Video size={16} /> Start Session
-                </Button>
+                </a>
               </div>
             )}
           </Card>
@@ -568,6 +617,74 @@ export function SessionsPage() {
           </div>
         </div>
       )}
+
+      {/* Reschedule Session Modal */}
+      <Modal open={rescheduleOpen} onClose={() => setRescheduleOpen(false)}>
+        <div className="mb-4 flex items-center justify-between border-b border-slate-100 pb-3">
+          <div>
+            <h2 className="text-base font-bold text-slate-900">Reschedule Session</h2>
+            <p className="mt-0.5 text-xs text-slate-500">{selected?.title}</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setRescheduleOpen(false)}
+            className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        <form onSubmit={handleRescheduleSubmit} className="space-y-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label
+                htmlFor="reschedule-date"
+                className="mb-1 block text-xs font-semibold text-slate-700"
+              >
+                New Date
+              </label>
+              <Input
+                id="reschedule-date"
+                type="date"
+                required
+                value={rescheduleDate}
+                onChange={(e) => setRescheduleDate(e.target.value)}
+              />
+            </div>
+            <div>
+              <label
+                htmlFor="reschedule-time"
+                className="mb-1 block text-xs font-semibold text-slate-700"
+              >
+                New Time
+              </label>
+              <Input
+                id="reschedule-time"
+                type="time"
+                required
+                value={rescheduleTime}
+                onChange={(e) => setRescheduleTime(e.target.value)}
+              />
+            </div>
+          </div>
+
+          {rescheduleError && <p className="text-xs text-red-600">{rescheduleError}</p>}
+
+          <div className="flex gap-3 border-t border-slate-100 pt-3">
+            <Button
+              type="button"
+              variant="secondary"
+              className="flex-1"
+              onClick={() => setRescheduleOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" className="flex-1" disabled={updateBooking.isPending}>
+              {updateBooking.isPending ? 'Saving…' : 'Confirm Reschedule'}
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }

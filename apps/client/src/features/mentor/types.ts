@@ -129,6 +129,7 @@ export interface MentorSession {
   monthLabel: string;
   dateLabel: string;
   timeLabel: string;
+  scheduledAt?: string;
   mode: string;
   status: MentorSessionStatus;
   agenda: string[];

@@ -10,9 +10,14 @@ export const createBookingSchema = z.object({
 });
 
 export const updateBookingSchema = z.object({
-  status: z.enum(['completed', 'cancelled']).optional(),
+  status: z.enum(['upcoming', 'completed', 'cancelled']).optional(),
   note: z.string().optional(),
   meetingLink: z.string().optional(),
+  scheduledAt: z
+    .string()
+    .min(1)
+    .refine((val) => !Number.isNaN(Date.parse(val)), 'Invalid scheduledAt date')
+    .optional(),
 });
 
 export type CreateBookingInput = z.infer<typeof createBookingSchema>;

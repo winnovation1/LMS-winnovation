@@ -112,6 +112,9 @@ export async function updateBooking(
     throw new ApiError(403, 'You do not have access to this booking');
   }
 
+  const nextScheduledAt = input.scheduledAt ? new Date(input.scheduledAt) : undefined;
+  const rescheduled =
+    nextScheduledAt !== undefined && nextScheduledAt.getTime() !== booking.scheduledAt.getTime();
   const statusChanged = input.status !== undefined && input.status !== booking.status;
 
   const updated = await prisma.booking.update({
@@ -119,14 +122,23 @@ export async function updateBooking(
     data: {
       ...(input.note !== undefined && { note: input.note }),
       ...(input.meetingLink !== undefined && { meetingLink: input.meetingLink }),
+      ...(nextScheduledAt !== undefined && { scheduledAt: nextScheduledAt }),
       ...(statusChanged && { status: input.status }),
     },
   });
 
+  const otherPartyId =
+    viewer.userId === booking.requesterId ? booking.mentorId : booking.requesterId;
+
   if (statusChanged && input.status === 'cancelled') {
-    const otherPartyId =
-      viewer.userId === booking.requesterId ? booking.mentorId : booking.requesterId;
     await createNotification(otherPartyId, 'booking_cancelled', `Session cancelled: ${booking.title}`);
+  } else if (rescheduled && nextScheduledAt) {
+    await createNotification(
+      otherPartyId,
+      'booking_created',
+      `Session rescheduled: ${booking.title}`,
+      `New time: ${nextScheduledAt.toLocaleString()}`
+    );
   }
 
   return updated;
