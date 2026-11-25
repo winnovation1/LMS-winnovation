@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
@@ -96,23 +97,48 @@ export function DashboardPage() {
                 No courses assigned to you yet — a Course Admin needs to assign you as the trainer.
               </p>
             )}
+
             {courses?.map((course) => (
-              <Link
+              <div
                 key={course.id}
-                to={`/trainer/courses/${course.id}`}
-                className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 p-3 hover:bg-slate-50"
+                className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 p-4 hover:bg-slate-50"
               >
                 <div>
-                  <p className="text-sm font-medium text-slate-800">{course.title}</p>
-                  <p className="mt-0.5 flex items-center gap-1 text-xs text-slate-500">
-                    {course.deliveryMode === 'online' ? <Laptop size={12} /> : <MapPin size={12} />}
+                  <p className="text-sm font-semibold text-slate-800">
+                    {course.title}
+                  </p>
+                  <p className="mt-1 flex items-center gap-1 text-xs text-slate-500">
+                    {course.deliveryMode === 'online' ? (
+                      <Laptop size={12} />
+                    ) : (
+                      <MapPin size={12} />
+                    )}
                     {course.deliveryMode === 'online' ? 'Online' : 'Offline'}
                   </p>
+                  <div className="mt-2">
+                    <Badge tone={course.status === 'published' ? 'green' : 'slate'}>
+                      {course.status}
+                    </Badge>
+                  </div>
                 </div>
-                <Badge tone={course.status === 'published' ? 'green' : 'slate'}>
-                  {course.status}
-                </Badge>
-              </Link>
+
+                <div className="flex flex-wrap gap-2">
+                  <Link
+                    to={`/trainer/courses/${course.id}`}
+                    className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
+                  >
+                    View Course
+                  </Link>
+
+                  <Link
+                    to={`/trainer/courses/${course.id}`}
+                    className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                  >
+                    <ClipboardCheck size={15} />
+                    Take Attendance
+                  </Link>
+                </div>
+              </div>
             ))}
           </div>
         </Card>
