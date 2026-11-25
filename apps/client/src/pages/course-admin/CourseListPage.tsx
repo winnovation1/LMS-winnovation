@@ -1,12 +1,13 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { BookOpen, Plus, UserRound } from 'lucide-react';
+import { BookOpen, Plus, Search, UserRound } from 'lucide-react';
 import type { CourseAdminCourseDto, CourseStatus } from '@forge-loom/shared-types';
 import { useMyCourses } from '../../features/course-admin/hooks';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Tabs } from '../../components/ui/Tabs';
 import { PageLoading } from '../../components/ui/PageLoading';
+import { useUrlSearchQuery } from '../../lib/useUrlSearchQuery';
 
 type TabValue = 'all' | CourseStatus;
 
@@ -49,11 +50,20 @@ function revenueByCurrency(courses: CourseAdminCourseDto[]): string {
 export function CourseListPage() {
   const { data: courses, isLoading } = useMyCourses();
   const [tab, setTab] = useState<TabValue>('all');
+  const [search, setSearch] = useUrlSearchQuery();
 
   const filtered = useMemo(() => {
     if (!courses) return [];
-    return tab === 'all' ? courses : courses.filter((c) => c.status === tab);
-  }, [courses, tab]);
+    const byTab = tab === 'all' ? courses : courses.filter((c) => c.status === tab);
+    const q = search.trim().toLowerCase();
+    if (!q) return byTab;
+    return byTab.filter(
+      (c) =>
+        c.title.toLowerCase().includes(q) ||
+        (c.description ?? '').toLowerCase().includes(q) ||
+        (c.trainerEmail ?? '').toLowerCase().includes(q)
+    );
+  }, [courses, tab, search]);
 
   const summary = useMemo(() => {
     const list = courses ?? [];
@@ -86,8 +96,16 @@ export function CourseListPage() {
       </div>
 
       <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <SummaryTile label="Courses" value={String(summary.total)} hint={`${summary.published} published`} />
-        <SummaryTile label="Students enrolled" value={String(summary.enrolled)} hint="Active + completed" />
+        <SummaryTile
+          label="Courses"
+          value={String(summary.total)}
+          hint={`${summary.published} published`}
+        />
+        <SummaryTile
+          label="Students enrolled"
+          value={String(summary.enrolled)}
+          hint="Active + completed"
+        />
         <SummaryTile
           label="Completions"
           value={String(summary.completed)}
@@ -101,13 +119,29 @@ export function CourseListPage() {
       </div>
 
       <Card className="p-0">
-        <div className="px-4 pt-2">
+        <div className="flex flex-wrap items-end justify-between gap-3 px-4 pt-2">
           <Tabs tabs={TABS} value={tab} onChange={setTab} />
+          <div className="relative mb-2 w-full sm:w-64">
+            <Search
+              size={14}
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+            />
+            <input
+              type="search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search by title or trainer"
+              aria-label="Search courses"
+              className="w-full rounded-lg border border-slate-200 py-1.5 pl-8 pr-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            />
+          </div>
         </div>
         <div className="flex flex-col divide-y divide-slate-100 p-4">
           {filtered.length === 0 && (
             <p className="py-8 text-center text-sm text-slate-400">
-              No courses in this category yet.
+              {search.trim()
+                ? `No courses match “${search.trim()}”.`
+                : 'No courses in this category yet.'}
             </p>
           )}
           {filtered.map((course) => {

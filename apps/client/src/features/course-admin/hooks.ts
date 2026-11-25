@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
   CourseAdminCourseDto,
+  CourseAdminProfileDto,
   CourseDto,
   CourseStatus,
   TrainerOptionDto,
@@ -15,6 +16,31 @@ export function useMyCourses() {
     queryKey: MY_COURSES_KEY,
     queryFn: () =>
       apiRequest<{ courses: CourseAdminCourseDto[] }>('/api/courses/mine').then((r) => r.courses),
+  });
+}
+
+const PROFILE_KEY = ['course-admin', 'profile'];
+
+export function useCourseAdminProfile(enabled = true) {
+  return useQuery({
+    queryKey: PROFILE_KEY,
+    queryFn: () =>
+      apiRequest<{ profile: CourseAdminProfileDto }>('/api/course-admin-profile/mine').then(
+        (r) => r.profile
+      ),
+    enabled,
+  });
+}
+
+export function useUpdateCourseAdminProfile() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { name: string; department: string }) =>
+      apiRequest<{ profile: CourseAdminProfileDto }>('/api/course-admin-profile/mine', {
+        method: 'PATCH',
+        body: input,
+      }).then((r) => r.profile),
+    onSuccess: (profile) => queryClient.setQueryData(PROFILE_KEY, profile),
   });
 }
 

@@ -6,6 +6,7 @@ import {
   useToggleShortlist,
 } from '../../features/hr/data';
 import { ApiClientError } from '../../lib/apiClient';
+import { useUrlSearchQuery } from '../../lib/useUrlSearchQuery';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
@@ -18,7 +19,7 @@ function errorMessage(error: unknown): string {
 }
 
 export function TalentPoolPage() {
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useUrlSearchQuery();
   const [domain, setDomain] = useState('');
   const [minScore, setMinScore] = useState(0);
   const [shortlistedOnly, setShortlistedOnly] = useState(false);

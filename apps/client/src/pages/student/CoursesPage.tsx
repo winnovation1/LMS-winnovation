@@ -19,6 +19,7 @@ import {
 import { useStudentActivity, useStudentCourses } from '../../features/student/hooks';
 import type { CourseStatus } from '../../features/student/types';
 import { PageLoading } from '../../components/ui/PageLoading';
+import { useUrlSearchQuery } from '../../lib/useUrlSearchQuery';
 
 type TabValue = 'all' | CourseStatus;
 
@@ -35,7 +36,7 @@ export function CoursesPage() {
   const { data: activityData, isLoading: activityLoading } = useStudentActivity();
 
   const [tab, setTab] = useState<TabValue>('all');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useUrlSearchQuery();
 
   // Filter courses based on active tab and search input
   const filteredCourses = useMemo(() => {

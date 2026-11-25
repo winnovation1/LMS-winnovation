@@ -1,6 +1,11 @@
 export type CourseDeliveryMode = 'online' | 'offline';
 export type CourseStatus = 'draft' | 'published' | 'archived';
 
+export interface CourseAdminProfileDto {
+  name: string;
+  department: string | null;
+}
+
 export interface SyllabusDayDto {
   // Stable identity of a saved day. Send it back on update so student progress
   // follows the day when it's moved; omit it for newly added days.

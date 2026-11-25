@@ -135,7 +135,15 @@ export function Sidebar({ items, open, onNavigate }: SidebarProps) {
           </div>
 
           {/* User Profile Pill */}
-          <div className="flex items-center justify-between rounded-xl px-1.5 py-1 text-left transition-colors hover:bg-slate-50/80 cursor-pointer">
+          <NavLink
+            to="/account"
+            onClick={onNavigate}
+            className={({ isActive }) =>
+              `flex items-center justify-between rounded-xl px-1.5 py-1 text-left transition-colors hover:bg-slate-50/80 ${
+                isActive ? 'bg-slate-50' : ''
+              }`
+            }
+          >
             <div className="flex items-center gap-3">
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#EAF2FF] text-[12px] font-bold text-[#2161F5] border border-blue-100">
                 {userInitials}
@@ -148,7 +156,7 @@ export function Sidebar({ items, open, onNavigate }: SidebarProps) {
               </div>
             </div>
             <ChevronRight size={15} className="text-slate-400" />
-          </div>
+          </NavLink>
         </div>
       </aside>
     </>

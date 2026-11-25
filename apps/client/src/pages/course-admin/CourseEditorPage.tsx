@@ -198,7 +198,7 @@ export function CourseEditorPage() {
                 : apiErrorMessage(loadError, 'Something went wrong. Please try again.')}
           </p>
           <Link
-            to="/course-admin/courses"
+            to="/course-admin"
             className="mt-5 inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
           >
             Back to My Courses
@@ -319,7 +319,7 @@ export function CourseEditorPage() {
     setDeleteError(null);
     try {
       await deleteCourse.mutateAsync();
-      navigate('/course-admin/courses', { replace: true });
+      navigate('/course-admin', { replace: true });
     } catch (err) {
       setDeleteError(apiErrorMessage(err, 'Could not delete this course.'));
     }

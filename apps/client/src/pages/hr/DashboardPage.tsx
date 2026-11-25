@@ -50,7 +50,7 @@ export function DashboardPage() {
   );
 }
 
-function CompanyProfileCard({ company }: { company: HrCompanyProfile | undefined }) {
+export function CompanyProfileCard({ company }: { company: HrCompanyProfile | undefined }) {
   const updateProfile = useUpdateHrProfile();
   const [editing, setEditing] = useState(false);
   const [companyName, setCompanyName] = useState('');
