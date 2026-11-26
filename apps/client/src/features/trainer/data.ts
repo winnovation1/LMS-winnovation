@@ -45,7 +45,7 @@ export function useTrainerCourses() {
     queryKey: ['trainer', 'courses-list'],
     queryFn: async () => {
       try {
-        const res = await apiRequest<{ courses: CourseDto[] }>('/api/courses?limit=50');
+        const res = await apiRequest<{ courses: CourseDto[] }>('/api/courses/teaching');
         return (res.courses ?? []).map<TrainerCourse>((c) => ({
           id: c.id,
           name: c.title,
@@ -68,7 +68,7 @@ export function useTrainerTeams() {
         return (res.teams ?? []).map<TrainerTeam>((t) => ({
           id: t.id,
           name: t.name,
-          problemStatementTitle: t.problemStatement?.title ?? 'Citadel Project',
+          problemStatementTitle: t.problemStatementId ? 'Citadel Project' : 'Unassigned',
           sprintStatus: 'Active',
         }));
       } catch {
