@@ -10,6 +10,7 @@ import type {
   CourseProgressDto,
   EnrollmentDto,
   EventDto,
+  NotificationDto,
   ProblemStatementDto,
   RazorpayCheckoutDto,
   TeamSprintsDto,
@@ -17,17 +18,21 @@ import type {
 } from '@forge-loom/shared-types';
 import { apiRequest, ApiClientError } from '../../lib/apiClient';
 import { openRazorpayCheckout } from '../../lib/razorpay';
-import {
-  MOCK_EVENTS,
-  MOCK_FEATURED_EVENT,
-  MOCK_MENTOR,
-  MOCK_RECENT_ACTIVITY,
-  MOCK_STATS,
-  MOCK_STREAK,
-  MOCK_UPCOMING_EVENTS,
-  MOCK_WEEKLY_PROGRESS,
-} from './mockData';
-import type { CourseStatus, CourseSummary, MentorSession, ProblemStatement, Sprint, StudentStats } from './types';
+import type {
+  ActivityItem,
+  CourseStatus,
+  CourseSummary,
+  EventItem,
+  FeaturedEvent,
+  LearningStreak,
+  MentorSession,
+  MentorSummary,
+  ProblemStatement,
+  Sprint,
+  StudentStats,
+  UpcomingEvent,
+  WeeklyProgress,
+} from './types';
 
 // Each hook below is a thin useQuery wrapper around static mock data — Phase
 // 3+ backend (Citadel, sessions, events) doesn't exist yet. Swapping to the
@@ -181,37 +186,185 @@ export function useEnroll() {
 export function useStudentUpcomingEvents() {
   return useQuery({
     queryKey: ['student', 'upcoming-events'],
-    queryFn: () => Promise.resolve(MOCK_UPCOMING_EVENTS),
+    queryFn: async (): Promise<UpcomingEvent[]> => {
+      try {
+        const res = await apiRequest<{ events: EventDto[] }>('/api/events');
+        const now = Date.now();
+        return (res.events ?? [])
+          .filter((e) => new Date(e.scheduledAt).getTime() >= now)
+          .slice(0, 5)
+          .map((e) => {
+            const d = new Date(e.scheduledAt);
+            return {
+              id: e.id,
+              title: e.title,
+              dateLabel: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+              timeLabel: d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
+              mode: e.venue ?? 'Online',
+            };
+          });
+      } catch {
+        return [];
+      }
+    },
   });
 }
 
 export function useStudentMentor() {
-  return useQuery({ queryKey: ['student', 'mentor'], queryFn: () => Promise.resolve(MOCK_MENTOR) });
+  return useQuery({
+    queryKey: ['student', 'mentor'],
+    queryFn: async (): Promise<MentorSummary> => {
+      try {
+        const res = await apiRequest<{ bookings: BookingDto[] }>('/api/bookings/mine');
+        const first = res.bookings?.[0];
+        if (!first) {
+          return {
+            name: 'No Mentor Assigned',
+            title: 'Book a 1-on-1 session to connect',
+            rating: 0,
+            reviewCount: 0,
+            initials: 'MN',
+          };
+        }
+        const name = first.mentorEmail.split('@')[0] || 'Mentor';
+        return {
+          name,
+          title: '1-on-1 Advisory Mentor',
+          rating: 5.0,
+          reviewCount: res.bookings.length,
+          initials: name.slice(0, 2).toUpperCase(),
+        };
+      } catch {
+        return {
+          name: 'Mentor Advisory',
+          title: 'Book a session from Mentor tab',
+          rating: 0,
+          reviewCount: 0,
+          initials: 'MA',
+        };
+      }
+    },
+  });
 }
 
 export function useFeaturedEvent() {
   return useQuery({
     queryKey: ['student', 'featured-event'],
-    queryFn: () => Promise.resolve(MOCK_FEATURED_EVENT),
+    queryFn: async (): Promise<FeaturedEvent> => {
+      try {
+        const res = await apiRequest<{ events: EventDto[] }>('/api/events');
+        const upcoming = (res.events ?? []).find(
+          (e) => new Date(e.scheduledAt).getTime() >= Date.now()
+        ) ?? res.events?.[0];
+        if (!upcoming) {
+          return {
+            tag: 'Events',
+            title: 'No upcoming featured events',
+            tagline: 'Check back soon for workshops & hackathons',
+            description: 'Scheduled college and community events will appear here.',
+            dateLabel: 'TBD',
+            timeLabel: 'TBD',
+            venue: 'Online',
+            participants: '0 registered',
+          };
+        }
+        const d = new Date(upcoming.scheduledAt);
+        return {
+          tag: upcoming.type ?? 'Event',
+          title: upcoming.title,
+          tagline: upcoming.collegeName ?? 'Forge Ecosystem Event',
+          description: upcoming.description ?? 'Join this session to learn and collaborate.',
+          dateLabel: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+          timeLabel: d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
+          venue: upcoming.venue ?? 'Online',
+          participants: `${upcoming.registeredCount ?? 0} registered`,
+        };
+      } catch {
+        return {
+          tag: 'Events',
+          title: 'No upcoming featured events',
+          tagline: 'Check back soon',
+          description: 'Scheduled events will appear here.',
+          dateLabel: 'TBD',
+          timeLabel: 'TBD',
+          venue: 'Online',
+          participants: '0 registered',
+        };
+      }
+    },
   });
 }
 
 export function useStudentActivity() {
   return useQuery({
     queryKey: ['student', 'activity'],
-    queryFn: () => Promise.resolve(MOCK_RECENT_ACTIVITY),
+    queryFn: async (): Promise<ActivityItem[]> => {
+      try {
+        const res = await apiRequest<{ notifications: NotificationDto[] }>('/api/notifications');
+        return (res.notifications ?? []).slice(0, 5).map((n) => ({
+          id: n.id,
+          title: n.title,
+          subtitle: n.body ?? 'Platform update',
+          timeAgo: new Date(n.createdAt).toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+          }),
+        }));
+      } catch {
+        return [];
+      }
+    },
   });
 }
 
 export function useWeeklyProgress() {
   return useQuery({
     queryKey: ['student', 'weekly-progress'],
-    queryFn: () => Promise.resolve(MOCK_WEEKLY_PROGRESS),
+    queryFn: async (): Promise<WeeklyProgress> => {
+      try {
+        const res = await apiRequest<{ records: AttendanceHistoryEntryDto[] }>(
+          '/api/students/me/attendance'
+        );
+        const records = res.records ?? [];
+        const present = records.filter((r) => r.status === 'present').length;
+        const pct = records.length > 0 ? Math.round((present / records.length) * 100) : 0;
+        return {
+          totalPercent: pct,
+          changeLabel: records.length > 0 ? `${present}/${records.length} sessions` : 'No sessions yet',
+          points: [0, 0, 0, 0, 0, 0, pct],
+          dayLabels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+        };
+      } catch {
+        return {
+          totalPercent: 0,
+          changeLabel: 'No data yet',
+          points: [0, 0, 0, 0, 0, 0, 0],
+          dayLabels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+        };
+      }
+    },
   });
 }
 
 export function useLearningStreak() {
-  return useQuery({ queryKey: ['student', 'streak'], queryFn: () => Promise.resolve(MOCK_STREAK) });
+  return useQuery({
+    queryKey: ['student', 'streak'],
+    queryFn: async (): Promise<LearningStreak> => {
+      try {
+        const stats = await apiRequest<StudentStats>('/api/student-stats/me');
+        const days = stats.currentStreak ?? 0;
+        return {
+          days,
+          weekPattern: Array.from({ length: 7 }, (_, i) => i < Math.min(days, 7)),
+        };
+      } catch {
+        return {
+          days: 0,
+          weekPattern: [false, false, false, false, false, false, false],
+        };
+      }
+    },
+  });
 }
 
 // Citadel's real model only has 3 cycles (the 3-sprint investor-unlock rule)
@@ -500,7 +653,36 @@ export function useRescheduleBooking() {
 }
 
 export function useEvents() {
-  return useQuery({ queryKey: ['student', 'events'], queryFn: () => Promise.resolve(MOCK_EVENTS) });
+  return useQuery({
+    queryKey: ['student', 'events'],
+    queryFn: async (): Promise<EventItem[]> => {
+      try {
+        const res = await apiRequest<{ events: EventDto[] }>('/api/events');
+        const now = Date.now();
+        return (res.events ?? []).map((e) => {
+          const d = new Date(e.scheduledAt);
+          const isUpcoming = d.getTime() >= now;
+          return {
+            id: e.id,
+            title: e.title,
+            dayLabel: String(d.getDate()),
+            monthLabel: d.toLocaleString('en-US', { month: 'short' }).toUpperCase(),
+            timeLabel: d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
+            location: e.venue ?? 'Online',
+            status: isUpcoming ? 'upcoming' : 'completed',
+            description: e.description ?? 'Campus & community session',
+            whatToExpect: [
+              `Type: ${e.type ?? 'Event'}`,
+              `Hosted by ${e.collegeName ?? e.hostedByEmail}`,
+            ],
+            participants: `${e.registeredCount ?? 0} registered`,
+          };
+        });
+      } catch {
+        return [];
+      }
+    },
+  });
 }
 
 type CalendarEntryItem = {
