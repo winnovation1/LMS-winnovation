@@ -13,6 +13,7 @@ export function toCourseDto(course: CourseWithSyllabus): CourseDto {
     currency: course.currency,
     status: course.status,
     syllabus: course.syllabus.map((day) => ({
+      id: day.id,
       dayNumber: day.dayNumber,
       title: day.title,
       description: day.description ?? undefined,

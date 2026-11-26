@@ -8,12 +8,16 @@ const envFile =
       ? '.env.test'
       : '.env.local';
 
-// Load from cwd, root or apps/server
+// Load from cwd, apps/server, or the monorepo root. npm workspace scripts run
+// with cwd = apps/server, so the repo-root env files must be checked via
+// '../..'. dotenv never overrides, so earlier entries win.
 for (const p of [
   path.resolve(process.cwd(), envFile),
   path.resolve(process.cwd(), 'apps/server', envFile),
+  path.resolve(process.cwd(), '../..', envFile),
   path.resolve(process.cwd(), '.env'),
   path.resolve(process.cwd(), 'apps/server', '.env'),
+  path.resolve(process.cwd(), '../..', '.env'),
 ]) {
   config({ path: p });
 }

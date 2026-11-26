@@ -130,6 +130,7 @@ export interface MentorSession {
   dayLabel: string;
   monthLabel: string;
   timeLabel: string;
+  scheduledAt?: string;
   mode: string;
   status: 'Upcoming' | 'Completed';
   agenda: string[];

@@ -11,6 +11,9 @@ export interface TalentProfileDto {
   collegeName?: string;
   course?: string;
   linkedIn?: string;
+  // Viewer-scoped (the requesting HR user)
+  shortlisted: boolean;
+  messaged: boolean;
 }
 
 export interface TalentSearchPageDto {

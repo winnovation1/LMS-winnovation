@@ -3,8 +3,20 @@ import { Role } from '@forge-loom/shared-types';
 import { authenticate } from '../../middleware/authenticate.js';
 import { authorize } from '../../middleware/authorize.js';
 import { asyncHandler } from '../../utils/asyncHandler.js';
-import { search } from './talentPool.controller.js';
+import { message, search, shortlist } from './talentPool.controller.js';
 
 export const talentPoolRouter = Router();
 
 talentPoolRouter.get('/', authenticate, authorize(Role.Hr), asyncHandler(search));
+talentPoolRouter.post(
+  '/:studentId/shortlist',
+  authenticate,
+  authorize(Role.Hr),
+  asyncHandler(shortlist)
+);
+talentPoolRouter.post(
+  '/:studentId/messages',
+  authenticate,
+  authorize(Role.Hr),
+  asyncHandler(message)
+);

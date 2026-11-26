@@ -27,3 +27,9 @@ export interface ProblemStatementDto {
   interested: boolean;
   updatedAt: string;
 }
+
+/** A problem statement as seen by the user who posted it (GET /mine). */
+export interface PostedProblemStatementDto extends ProblemStatementDto {
+  interestCount: number;
+  createdAt: string;
+}

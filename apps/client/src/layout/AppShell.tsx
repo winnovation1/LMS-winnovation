@@ -4,6 +4,7 @@ import { Topbar } from './Topbar';
 import { Sidebar } from './Sidebar';
 import { ROLE_NAV } from './roleNav';
 import { useAuth } from '../auth/AuthContext';
+import { ErrorBoundary } from '../components/ui/ErrorBoundary';
 
 export function AppShell() {
   const { user } = useAuth();
@@ -46,7 +47,9 @@ export function AppShell() {
       <div className="relative z-10 flex flex-1 flex-col min-w-0">
         <Topbar onMenuClick={() => setSidebarOpen((open) => !open)} />
         <main className="flex-1 p-5 sm:p-7 lg:p-8">
-          <Outlet />
+          <ErrorBoundary>
+            <Outlet />
+          </ErrorBoundary>
         </main>
       </div>
     </div>
