@@ -365,13 +365,19 @@ export function useMentorSessions() {
 export function useScheduleSession() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (input: { studentEmail: string; title: string; scheduledAt: string }) =>
+    mutationFn: (input: {
+      studentEmail: string;
+      title: string;
+      scheduledAt: string;
+      agenda?: string[];
+    }) =>
       apiRequest<{ booking: BookingDto }>('/api/bookings', {
         method: 'POST',
         body: {
           counterpartEmail: input.studentEmail,
           title: input.title,
           scheduledAt: input.scheduledAt,
+          ...(input.agenda && input.agenda.length > 0 && { agenda: input.agenda }),
         },
       }).then((r) => r.booking),
     onSuccess: () => {
@@ -386,19 +392,21 @@ export function useUpdateBookingSession() {
     mutationFn: ({
       bookingId,
       note,
+      agenda,
       status,
       meetingLink,
       scheduledAt,
     }: {
       bookingId: string;
       note?: string;
+      agenda?: string[];
       status?: 'upcoming' | 'completed' | 'cancelled';
       meetingLink?: string;
       scheduledAt?: string;
     }) =>
       apiRequest<{ booking: BookingDto }>(`/api/bookings/${bookingId}`, {
         method: 'PATCH',
-        body: { note, status, meetingLink, scheduledAt },
+        body: { note, agenda, status, meetingLink, scheduledAt },
       }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: MENTOR_BOOKINGS_KEY });

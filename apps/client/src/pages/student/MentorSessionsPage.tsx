@@ -18,6 +18,7 @@ import { useCreateBooking, useMentorSessions, useRescheduleBooking } from '../..
 import type { MentorSessionTab, MentorSession } from '../../features/student/types';
 import { Modal } from '../../components/ui/Modal';
 import { PageLoading } from '../../components/ui/PageLoading';
+import { parseAgendaItems } from '../../lib/agenda';
 import { toLocalDateTimeInputs } from '../../lib/dateInputs';
 
 const TABS: { value: MentorSessionTab; label: string }[] = [
@@ -39,6 +40,7 @@ export function MentorSessionsPage() {
   const [title, setTitle] = useState('');
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
+  const [agendaText, setAgendaText] = useState('');
   const [bookError, setBookError] = useState<string | null>(null);
   const [bookingSuccess, setBookingSuccess] = useState(false);
 
@@ -83,11 +85,13 @@ export function MentorSessionsPage() {
       return;
     }
     setBookError(null);
+    const parsedAgenda = parseAgendaItems(agendaText);
     try {
       await createBooking.mutateAsync({
         counterpartEmail: mentorEmail,
         title,
         scheduledAt: new Date(`${date}T${time}`).toISOString(),
+        agenda: parsedAgenda.length > 0 ? parsedAgenda : undefined,
       });
       setBookingSuccess(true);
     } catch {
@@ -102,6 +106,7 @@ export function MentorSessionsPage() {
     setTitle('');
     setDate('');
     setTime('');
+    setAgendaText('');
     setBookError(null);
   }
 
@@ -564,7 +569,7 @@ export function MentorSessionsPage() {
           <div className="pointer-events-none absolute h-[380px] w-[520px] rounded-full bg-blue-500/15 blur-[90px]" />
 
           <div
-            className="relative w-full max-w-[690px] rounded-[24px] sm:rounded-[26px] border border-white/85 bg-white/95 p-6 sm:p-8 md:p-9 shadow-[0_25px_60px_-15px_rgba(15,28,55,0.22)] backdrop-blur-2xl transition-all overflow-hidden animate-forge-modal"
+            className="relative w-full max-w-[690px] max-h-[90vh] overflow-y-auto rounded-[24px] sm:rounded-[26px] border border-white/85 bg-white/95 p-6 sm:p-8 md:p-9 shadow-[0_25px_60px_-15px_rgba(15,28,55,0.22)] backdrop-blur-2xl transition-all animate-forge-modal"
             role="dialog"
             aria-modal="true"
             aria-labelledby="mentor-modal-title"
@@ -785,6 +790,28 @@ export function MentorSessionsPage() {
                         Select a time slot.
                       </p>
                     </div>
+                  </div>
+
+                  {/* Field 4b: Optional Session Agenda */}
+                  <div>
+                    <label
+                      htmlFor="session-agenda-input"
+                      className="block text-[13px] font-semibold text-[#15213D] mb-1.5"
+                    >
+                      Session agenda{' '}
+                      <span className="font-normal text-[#8FA2BE]">(optional)</span>
+                    </label>
+                    <textarea
+                      id="session-agenda-input"
+                      rows={2}
+                      placeholder={'One topic per line, e.g.\nArchitecture doubts\nSprint milestone feedback'}
+                      value={agendaText}
+                      onChange={(e) => setAgendaText(e.target.value)}
+                      className="w-full rounded-[14px] border border-[rgba(60,100,160,0.18)] bg-white px-3.5 py-2.5 text-[13.5px] text-[#15213D] placeholder:text-slate-400 shadow-2xs transition-all focus:border-[#2161F5] focus:outline-none focus:ring-3 focus:ring-blue-500/10"
+                    />
+                    <p className="mt-1 text-[11.5px] text-[#8FA2BE]">
+                      Add discussion points so your mentor can prepare beforehand.
+                    </p>
                   </div>
 
                   {/* Field 5: Notification Information Panel */}

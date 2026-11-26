@@ -12,6 +12,7 @@ export const createBookingSchema = z.object({
 export const updateBookingSchema = z.object({
   status: z.enum(['upcoming', 'completed', 'cancelled']).optional(),
   note: z.string().optional(),
+  agenda: z.array(z.string()).optional(),
   meetingLink: z.string().optional(),
   scheduledAt: z
     .string()
