@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Layers, Target, UserCheck } from 'lucide-react';
+import { Calendar, ExternalLink, FileCode, Layers, Star, Target, UserCheck } from 'lucide-react';
 import {
   useAddSprintFeedback,
   useCompleteSprint,
@@ -20,6 +20,7 @@ export function TeamsPage() {
   const completeSprint = useCompleteSprint();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [feedbackComment, setFeedbackComment] = useState('');
+  const [rating, setRating] = useState<number>(5);
   const [actionError, setActionError] = useState<string | null>(null);
 
   const selectedTeam = teams?.find((t) => t.id === selectedId) ?? teams?.[0];
@@ -36,6 +37,7 @@ export function TeamsPage() {
       await addFeedback.mutateAsync({
         sprintId: detail.currentSprintId,
         comment: feedbackComment.trim(),
+        rating,
       });
       setFeedbackComment('');
     } catch {
@@ -131,6 +133,57 @@ export function TeamsPage() {
                 {actionError && <p className="mb-2 text-xs text-red-600">{actionError}</p>}
                 {detail.currentSprintStatus === 'submitted' && (
                   <>
+                    <div className="mb-4 rounded-xl border border-blue-100 bg-blue-50/50 p-4">
+                      <div className="mb-2 flex items-center justify-between">
+                        <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-blue-700">
+                          <FileCode size={14} /> Submitted Milestone Deliverables
+                        </span>
+                        {detail.latestSubmission?.createdAt && (
+                          <span className="text-[11px] text-slate-400">
+                            {new Date(detail.latestSubmission.createdAt).toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                              hour: 'numeric',
+                              minute: '2-digit',
+                            })}
+                          </span>
+                        )}
+                      </div>
+
+                      {detail.latestSubmission?.artifactUrls && detail.latestSubmission.artifactUrls.length > 0 ? (
+                        <div className="space-y-2">
+                          {detail.latestSubmission.artifactUrls.map((url, i) => (
+                            <a
+                              key={i}
+                              href={url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="group flex items-center justify-between rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-mono text-blue-600 transition hover:border-blue-300 hover:bg-blue-50/70"
+                            >
+                              <span className="truncate pr-2 font-medium">{url}</span>
+                              <ExternalLink size={13} className="shrink-0 text-slate-400 transition group-hover:text-blue-600" />
+                            </a>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-xs text-slate-500 italic">No external deliverables attached.</p>
+                      )}
+
+                      {detail.latestSubmission?.demoDate && (
+                        <div className="mt-2.5 flex items-center gap-1.5 text-xs text-slate-600">
+                          <Calendar size={13} className="text-slate-400" />
+                          <span>
+                            Demo Date:{' '}
+                            {new Date(detail.latestSubmission.demoDate).toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric',
+                            })}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
                     <h3 className="mb-2 text-sm font-semibold text-slate-900">
                       Review this sprint's submission
                     </h3>
@@ -138,20 +191,60 @@ export function TeamsPage() {
                       value={feedbackComment}
                       onChange={(e) => setFeedbackComment(e.target.value)}
                       rows={3}
-                      placeholder="Leave feedback on the submitted milestone…"
+                      placeholder="Leave feedback on the submitted deliverables and milestone…"
                       className="mb-2 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                     />
+
+                    <div className="mb-3 flex items-center justify-between">
+                      <span className="text-xs font-medium text-slate-600">Milestone Rating:</span>
+                      <div className="flex items-center gap-1">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <button
+                            key={star}
+                            type="button"
+                            onClick={() => setRating(star)}
+                            className="p-0.5 text-amber-400 transition hover:scale-110"
+                          >
+                            <Star
+                              size={16}
+                              className={star <= rating ? 'fill-amber-400 text-amber-400' : 'text-slate-200'}
+                            />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
                     <Button
                       className="w-full"
                       onClick={handleSubmitFeedback}
                       disabled={addFeedback.isPending || !feedbackComment.trim()}
                     >
-                      {addFeedback.isPending ? 'Submitting…' : 'Submit Feedback'}
+                      {addFeedback.isPending ? 'Submitting…' : 'Submit Feedback & Approve Review'}
                     </Button>
                   </>
                 )}
                 {detail.currentSprintStatus === 'reviewed' && (
                   <>
+                    {detail.latestSubmission?.artifactUrls && detail.latestSubmission.artifactUrls.length > 0 && (
+                      <div className="mb-3 rounded-lg border border-slate-100 bg-slate-50 p-3">
+                        <div className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-slate-600">
+                          <FileCode size={13} /> Reviewed Artifacts
+                        </div>
+                        <div className="space-y-1">
+                          {detail.latestSubmission.artifactUrls.map((url, i) => (
+                            <a
+                              key={i}
+                              href={url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-1.5 text-xs font-mono text-blue-600 hover:underline"
+                            >
+                              <ExternalLink size={12} /> {url}
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                     <Badge tone="amber">Reviewed — ready to complete</Badge>
                     <Button
                       className="mt-2 w-full"

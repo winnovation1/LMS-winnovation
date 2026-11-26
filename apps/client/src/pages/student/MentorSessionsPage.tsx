@@ -2,25 +2,23 @@ import React, { useEffect, useMemo, useState } from 'react';
 import {
   AlertCircle,
   Calendar,
-  CalendarPlus,
   Check,
   CheckCircle2,
   Clock,
-  ExternalLink,
   FileText,
   Lightbulb,
   Linkedin,
   Mail,
   MoreVertical,
-  Plus,
-  User,
   Users,
   Video,
   X,
 } from 'lucide-react';
-import { useCreateBooking, useMentorSessions } from '../../features/student/hooks';
+import { useCreateBooking, useMentorSessions, useRescheduleBooking } from '../../features/student/hooks';
 import type { MentorSessionTab, MentorSession } from '../../features/student/types';
+import { Modal } from '../../components/ui/Modal';
 import { PageLoading } from '../../components/ui/PageLoading';
+import { toLocalDateTimeInputs } from '../../lib/dateInputs';
 
 const TABS: { value: MentorSessionTab; label: string }[] = [
   { value: 'upcoming', label: 'Upcoming Sessions' },
@@ -30,6 +28,7 @@ const TABS: { value: MentorSessionTab; label: string }[] = [
 export function MentorSessionsPage() {
   const { data, isLoading } = useMentorSessions();
   const createBooking = useCreateBooking();
+  const rescheduleBooking = useRescheduleBooking();
 
   const [tab, setTab] = useState<MentorSessionTab>('upcoming');
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -43,7 +42,13 @@ export function MentorSessionsPage() {
   const [bookError, setBookError] = useState<string | null>(null);
   const [bookingSuccess, setBookingSuccess] = useState(false);
 
-  const sessions = data ?? [];
+  // Reschedule modal states
+  const [rescheduleOpen, setRescheduleOpen] = useState(false);
+  const [rescheduleDate, setRescheduleDate] = useState('');
+  const [rescheduleTime, setRescheduleTime] = useState('');
+  const [rescheduleError, setRescheduleError] = useState<string | null>(null);
+
+  const sessions = useMemo(() => data ?? [], [data]);
 
   // Filter sessions based on current active tab
   const filtered = useMemo(() => {
@@ -54,6 +59,18 @@ export function MentorSessionsPage() {
 
   const selected: MentorSession | undefined =
     sessions.find((s) => s.id === selectedId) ?? (filtered.length > 0 ? filtered[0] : undefined);
+
+  // Close modal on Escape key press
+  useEffect(() => {
+    if (!bookOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        handleCloseModal();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [bookOpen]);
 
   if (isLoading) {
     return <PageLoading />;
@@ -88,17 +105,37 @@ export function MentorSessionsPage() {
     setBookError(null);
   }
 
-  // Close modal on Escape key press
-  useEffect(() => {
-    if (!bookOpen) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        handleCloseModal();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [bookOpen]);
+  function openRescheduleModal() {
+    if (!selected) return;
+    const { date: d, time: t } = toLocalDateTimeInputs(selected.scheduledAt);
+    setRescheduleDate(d);
+    setRescheduleTime(t);
+    setRescheduleError(null);
+    setRescheduleOpen(true);
+  }
+
+  async function handleRescheduleSession(e: React.FormEvent) {
+    e.preventDefault();
+    if (!selected || !rescheduleDate || !rescheduleTime) {
+      setRescheduleError('Please choose both a date and a time.');
+      return;
+    }
+    const nextAt = new Date(`${rescheduleDate}T${rescheduleTime}`);
+    if (Number.isNaN(nextAt.getTime())) {
+      setRescheduleError('Please enter a valid date and time.');
+      return;
+    }
+    setRescheduleError(null);
+    try {
+      await rescheduleBooking.mutateAsync({
+        bookingId: selected.id,
+        scheduledAt: nextAt.toISOString(),
+      });
+      setRescheduleOpen(false);
+    } catch {
+      setRescheduleError('Could not reschedule this session. Please try again.');
+    }
+  }
 
   return (
     <div className="relative min-h-screen pb-16">
@@ -445,7 +482,8 @@ export function MentorSessionsPage() {
                   <div className="mt-5 flex items-center gap-3 pt-4 border-t border-slate-100">
                     <button
                       type="button"
-                      className="flex-1 rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+                      onClick={openRescheduleModal}
+                      className="flex-1 rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
                     >
                       Reschedule
                     </button>
@@ -807,6 +845,81 @@ export function MentorSessionsPage() {
           </div>
         </div>
       )}
+
+      {/* Reschedule Modal */}
+      <Modal open={rescheduleOpen} onClose={() => setRescheduleOpen(false)}>
+        <div className="mb-4 flex items-center justify-between border-b border-slate-100 pb-3">
+          <div>
+            <h2 className="text-base font-bold text-[#15213D]">Reschedule Session</h2>
+            <p className="mt-0.5 text-xs text-slate-500">{selected?.title}</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setRescheduleOpen(false)}
+            className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        <form onSubmit={handleRescheduleSession} className="space-y-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label
+                htmlFor="student-reschedule-date"
+                className="mb-1.5 block text-xs font-semibold text-[#15213D]"
+              >
+                New Date
+              </label>
+              <input
+                id="student-reschedule-date"
+                type="date"
+                required
+                value={rescheduleDate}
+                onChange={(e) => setRescheduleDate(e.target.value)}
+                className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-[#15213D] focus:border-[#2161F5] focus:outline-none"
+              />
+            </div>
+            <div>
+              <label
+                htmlFor="student-reschedule-time"
+                className="mb-1.5 block text-xs font-semibold text-[#15213D]"
+              >
+                New Time
+              </label>
+              <input
+                id="student-reschedule-time"
+                type="time"
+                required
+                value={rescheduleTime}
+                onChange={(e) => setRescheduleTime(e.target.value)}
+                className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-[#15213D] focus:border-[#2161F5] focus:outline-none"
+              />
+            </div>
+          </div>
+
+          {rescheduleError && (
+            <p className="text-xs text-rose-600">{rescheduleError}</p>
+          )}
+
+          <div className="flex gap-3 pt-2">
+            <button
+              type="button"
+              onClick={() => setRescheduleOpen(false)}
+              className="flex-1 rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={rescheduleBooking.isPending}
+              className="flex-1 rounded-xl bg-[#2161F5] px-4 py-2.5 text-xs font-semibold text-white hover:bg-blue-600 disabled:opacity-60 transition-colors cursor-pointer"
+            >
+              {rescheduleBooking.isPending ? 'Saving…' : 'Confirm Reschedule'}
+            </button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }

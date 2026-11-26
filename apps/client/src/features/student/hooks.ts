@@ -425,6 +425,8 @@ function toMentorSession(booking: BookingDto): MentorSession {
   const start = new Date(booking.scheduledAt);
   const end = new Date(start.getTime() + booking.durationMinutes * 60_000);
   const fmtTime = (d: Date) => d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  const isPast = end.getTime() < Date.now();
+  const isCompleted = booking.status === 'completed' || isPast;
 
   return {
     id: booking.id,
@@ -440,11 +442,12 @@ function toMentorSession(booking: BookingDto): MentorSession {
     dayLabel: start.getDate().toString(),
     monthLabel: start.toLocaleDateString('en-US', { month: 'short' }).toUpperCase(),
     timeLabel: `${fmtTime(start)} – ${fmtTime(end)}`,
+    scheduledAt: booking.scheduledAt,
     mode: booking.mode,
-    status: booking.status === 'completed' ? 'Completed' : 'Upcoming',
+    status: isCompleted ? 'Completed' : 'Upcoming',
     agenda: booking.agenda,
     note: booking.note ?? '',
-    meetingLink: booking.meetingLink ?? '#',
+    meetingLink: booking.meetingLink ?? 'https://meet.google.com/forgeloom-mentor-1',
   };
 }
 
@@ -476,6 +479,20 @@ export function useCreateBooking() {
       apiRequest<{ booking: BookingDto }>('/api/bookings', { method: 'POST', body: input }).then(
         (r) => r.booking
       ),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: MENTOR_SESSIONS_KEY });
+    },
+  });
+}
+
+export function useRescheduleBooking() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ bookingId, scheduledAt }: { bookingId: string; scheduledAt: string }) =>
+      apiRequest<{ booking: BookingDto }>(`/api/bookings/${bookingId}`, {
+        method: 'PATCH',
+        body: { scheduledAt, status: 'upcoming' },
+      }).then((r) => r.booking),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: MENTOR_SESSIONS_KEY });
     },

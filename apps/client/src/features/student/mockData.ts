@@ -129,11 +129,11 @@ export const MOCK_UPCOMING_EVENTS: UpcomingEvent[] = [
 ];
 
 export const MOCK_MENTOR: MentorSummary = {
-  name: 'Rohit Verma',
-  title: 'Full Stack Developer @ Forge',
-  rating: 4.9,
-  reviewCount: 120,
-  initials: 'RV',
+  name: 'Mentor One',
+  title: 'Lead Mentor & Technical Advisory',
+  rating: 5.0,
+  reviewCount: 48,
+  initials: 'M1',
 };
 
 export const MOCK_FEATURED_EVENT: FeaturedEvent = {

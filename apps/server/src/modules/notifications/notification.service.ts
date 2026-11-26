@@ -24,11 +24,13 @@ export async function createNotification(
 }
 
 export async function listMyNotifications(userId: string): Promise<Notification[]> {
-  return prisma.notification.findMany({
-    where: { userId },
-    orderBy: { createdAt: 'desc' },
-    take: 50,
-  });
+  return prisma.$queryRaw<Notification[]>`
+    SELECT id, "userId", type, title, body, read, "createdAt"
+    FROM "Notification"
+    WHERE "userId" = ${userId}
+    ORDER BY "createdAt" DESC
+    LIMIT 50
+  `;
 }
 
 export async function markRead(userId: string, notificationId: string): Promise<void> {

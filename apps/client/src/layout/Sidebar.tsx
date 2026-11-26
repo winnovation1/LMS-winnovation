@@ -1,7 +1,9 @@
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { ArrowRight, ArrowUpRight, ChevronRight } from 'lucide-react';
 import type { NavItem } from './roleNav';
 import { useAuth } from '../auth/AuthContext';
+import { ROLE_HOME_PATH } from '../auth/roleHome';
+import { Role } from '@forge-loom/shared-types';
 
 interface SidebarProps {
   items: NavItem[];
@@ -12,11 +14,23 @@ interface SidebarProps {
 export function Sidebar({ items, open, onNavigate }: SidebarProps) {
   const { user } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const isCalendar = location.pathname.includes('/calendar');
   const isTracker = location.pathname.includes('/tracker');
   const isCitadel = location.pathname.includes('/citadel');
   const userName = user?.email.split('@')[0] ?? 'student1';
   const userInitials = userName.slice(0, 2).toUpperCase();
+
+  function handleBannerClick() {
+    onNavigate();
+    if (user?.role === Role.Student) {
+      navigate(isCitadel ? '/student/citadel' : '/student/courses');
+    } else if (user?.role === Role.Mentor) {
+      navigate('/mentor/teams');
+    } else if (user) {
+      navigate(ROLE_HOME_PATH[user.role]);
+    }
+  }
 
   return (
     <>
@@ -84,11 +98,14 @@ export function Sidebar({ items, open, onNavigate }: SidebarProps) {
         {/* Bottom Section */}
         <div className="flex flex-col gap-4 pt-4">
           {/* Motivation Card */}
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#EAF2FF] via-[#F1F6FF] to-[#DDE9FF] p-4 border border-blue-100/70 shadow-xs">
+          <div
+            onClick={handleBannerClick}
+            className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#EAF2FF] via-[#F1F6FF] to-[#DDE9FF] p-4 border border-blue-100/70 shadow-xs transition-all duration-200 hover:shadow-md hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
+          >
             {/* Background 2D abstract waves */}
             <svg
               aria-hidden="true"
-              className="absolute -right-2 -bottom-2 w-28 h-28 pointer-events-none opacity-40 text-blue-400"
+              className="absolute -right-2 -bottom-2 w-28 h-28 pointer-events-none opacity-40 text-blue-400 group-hover:opacity-60 transition-opacity"
               viewBox="0 0 100 100"
               fill="none"
               xmlns="http://www.w3.org/2000/svg"
@@ -124,7 +141,7 @@ export function Sidebar({ items, open, onNavigate }: SidebarProps) {
                 </div>
               )}
 
-              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#2161F5] text-white shadow-sm transition-transform duration-200 hover:scale-105 cursor-pointer">
+              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#2161F5] text-white shadow-sm transition-transform duration-200 group-hover:scale-110">
                 {isCitadel || isTracker || isCalendar ? (
                   <ArrowRight size={15} strokeWidth={2.2} />
                 ) : (

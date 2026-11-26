@@ -19,6 +19,7 @@ export interface TodaySession {
   timeLabel: string;
   mode: string;
   startingInLabel: string;
+  meetingLink?: string;
 }
 
 export interface TeamSummary {
@@ -56,6 +57,7 @@ export interface UpcomingSessionHighlight {
   timeLabel: string;
   mode: string;
   startingInLabel: string;
+  meetingLink?: string;
 }
 
 export type StudentStatus = 'on_track' | 'at_risk' | 'not_started';
@@ -95,6 +97,13 @@ export interface TeamMember {
   role: string;
 }
 
+export interface TeamSubmissionArtifact {
+  id: string;
+  artifactUrls: string[];
+  demoDate: string | null;
+  createdAt: string;
+}
+
 export interface TeamDetail {
   id: string;
   name: string;
@@ -107,6 +116,7 @@ export interface TeamDetail {
   currentSprintId: string | null;
   currentSprintStatus: 'in_progress' | 'submitted' | 'reviewed' | null;
   members: TeamMember[];
+  latestSubmission?: TeamSubmissionArtifact | null;
 }
 
 export type MentorSessionStatus = 'Upcoming' | 'Completed';
@@ -119,7 +129,11 @@ export interface MentorSession {
   monthLabel: string;
   dateLabel: string;
   timeLabel: string;
+  scheduledAt?: string;
   mode: string;
   status: MentorSessionStatus;
   agenda: string[];
+  note?: string;
+  requesterEmail?: string;
+  meetingLink?: string;
 }
