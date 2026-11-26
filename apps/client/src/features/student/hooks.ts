@@ -27,7 +27,7 @@ import {
   MOCK_UPCOMING_EVENTS,
   MOCK_WEEKLY_PROGRESS,
 } from './mockData';
-import type { CourseStatus, CourseSummary, MentorSession, ProblemStatement, Sprint } from './types';
+import type { CourseStatus, CourseSummary, MentorSession, ProblemStatement, Sprint, StudentStats } from './types';
 
 // Each hook below is a thin useQuery wrapper around static mock data — Phase
 // 3+ backend (Citadel, sessions, events) doesn't exist yet. Swapping to the
@@ -36,7 +36,7 @@ import type { CourseStatus, CourseSummary, MentorSession, ProblemStatement, Spri
 // is the one hook already swapped over, by Phase 2.
 
 export function useStudentStats() {
-  return useQuery({ queryKey: ['student', 'stats'], queryFn: () => Promise.resolve(MOCK_STATS) });
+return useQuery({ queryKey: ['student', 'stats'], queryFn: () => apiRequest<StudentStats>('/api/student-stats/me') });
 }
 
 const ENROLLMENTS_KEY = ['student', 'enrollments'];

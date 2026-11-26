@@ -1,4 +1,5 @@
 import express, { type Express } from 'express';
+import{studentStatsRouter} from'./modules/studentStats/studentStats.routes.js';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
@@ -48,6 +49,7 @@ export function createApp(): Express {
   app.use('/api/auth', authRouter);
   app.use('/api/courses', courseRouter);
   app.use('/api/enrollments', enrollmentRouter);
+  app.use('/api/student-stats', studentStatsRouter);
   app.use('/api/catalog', catalogRouter);
   app.use('/api/sessions', sessionRouter);
   app.use('/api/students', studentAttendanceRouter);
