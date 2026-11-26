@@ -12,4 +12,7 @@ export interface CreateCourseInput {
   trainerEmail?: string;
 }
 
-export type UpdateCourseInput = Partial<CreateCourseInput>;
+export type UpdateCourseInput = Partial<Omit<CreateCourseInput, 'trainerEmail'>> & {
+  /** undefined = leave unchanged, null = unassign. */
+  trainerEmail?: string | null;
+};

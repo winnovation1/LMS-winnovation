@@ -81,6 +81,24 @@ export async function listProblemStatements(
   }));
 }
 
+export interface PostedProblemStatement {
+  problemStatement: ProblemStatementWithDeliverables;
+  interestCount: number;
+}
+
+/** Problem statements (HR "opportunities") posted by this user, newest first. */
+export async function listPostedBy(userId: string): Promise<PostedProblemStatement[]> {
+  const rows = await prisma.problemStatement.findMany({
+    where: { postedBy: userId },
+    orderBy: { createdAt: 'desc' },
+    include: { ...DELIVERABLES_INCLUDE, _count: { select: { interestExpressions: true } } },
+  });
+  return rows.map(({ _count, ...problemStatement }) => ({
+    problemStatement,
+    interestCount: _count.interestExpressions,
+  }));
+}
+
 export async function expressInterest(userId: string, problemStatementId: string): Promise<void> {
   const exists = await prisma.problemStatement.findUnique({ where: { id: problemStatementId } });
   if (!exists) {

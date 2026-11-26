@@ -1,7 +1,15 @@
 export type CourseDeliveryMode = 'online' | 'offline';
 export type CourseStatus = 'draft' | 'published' | 'archived';
 
+export interface CourseAdminProfileDto {
+  name: string;
+  department: string | null;
+}
+
 export interface SyllabusDayDto {
+  // Stable identity of a saved day. Send it back on update so student progress
+  // follows the day when it's moved; omit it for newly added days.
+  id?: string;
   dayNumber: number;
   title: string;
   description?: string;
@@ -27,6 +35,28 @@ export interface CourseDto {
   trainerId: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface CourseStatsDto {
+  /** Active + completed enrollments (i.e. students who have paid / been admitted). */
+  enrolledCount: number;
+  completedCount: number;
+  pendingPaymentCount: number;
+  /** Sum of payments from active + completed enrollments, in the course's currency. */
+  revenue: number;
+}
+
+/** A course as listed for its owning course_admin (GET /api/courses/mine). */
+export interface CourseAdminCourseDto extends CourseDto {
+  stats: CourseStatsDto;
+  trainerEmail: string | null;
+}
+
+/** An assignable trainer for the course editor's dropdown. */
+export interface TrainerOptionDto {
+  id: string;
+  email: string;
+  collegeName?: string;
 }
 
 export interface CourseListPageDto {

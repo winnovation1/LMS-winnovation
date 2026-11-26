@@ -40,6 +40,7 @@ import { DashboardPage as MemberDashboardPage } from './pages/member/DashboardPa
 import { DashboardPage as AdminDashboardPage } from './pages/admin/DashboardPage';
 import { CourseListPage } from './pages/course-admin/CourseListPage';
 import { CourseEditorPage } from './pages/course-admin/CourseEditorPage';
+import { AccountPage } from './pages/account/AccountPage';
 
 function RootRedirect() {
   const { status, user } = useAuth();
@@ -86,6 +87,8 @@ export function App() {
 
           <Route element={<RequireAuth />}>
             <Route element={<AppShell />}>
+              <Route path="/account" element={<AccountPage />} />
+
               {roleSection(
                 Role.Student,
                 <>

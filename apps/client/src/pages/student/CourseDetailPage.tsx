@@ -111,6 +111,7 @@ export function CourseDetailPage() {
         <div className="mb-1 flex items-center gap-2">
           <h1 className="text-xl font-semibold text-slate-900">{course.title}</h1>
           <Badge tone={isOnline ? 'blue' : 'purple'}>{isOnline ? 'Online' : 'Offline'}</Badge>
+          {course.status === 'archived' && <Badge tone="slate">Archived</Badge>}
         </div>
         <p className="text-sm text-slate-500">{course.description || 'No description.'}</p>
       </div>

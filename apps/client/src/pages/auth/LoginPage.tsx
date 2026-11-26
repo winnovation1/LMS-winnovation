@@ -80,8 +80,12 @@ export function LoginPage() {
       const destination = from && from !== '/login' ? from : ROLE_HOME_PATH[loggedInUser.role];
       navigate(destination, { replace: true });
     } catch (err) {
+      // Non-ApiClientError means the request never got a response (server
+      // down, network/CORS failure) — don't blame the user's credentials.
       setError(
-        err instanceof ApiClientError ? err.message : 'Invalid credentials. Please try again.'
+        err instanceof ApiClientError
+          ? err.message
+          : "Can't reach the server. Please check your connection and try again."
       );
     } finally {
       setSubmitting(false);
