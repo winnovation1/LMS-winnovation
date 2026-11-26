@@ -121,6 +121,7 @@ export async function updateBooking(
     where: { id: bookingId },
     data: {
       ...(input.note !== undefined && { note: input.note }),
+      ...(input.agenda !== undefined && { agenda: input.agenda }),
       ...(input.meetingLink !== undefined && { meetingLink: input.meetingLink }),
       ...(nextScheduledAt !== undefined && { scheduledAt: nextScheduledAt }),
       ...(statusChanged && { status: input.status }),

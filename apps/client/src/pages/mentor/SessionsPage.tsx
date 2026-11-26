@@ -14,6 +14,7 @@ import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Modal } from '../../components/ui/Modal';
 import { PageLoading } from '../../components/ui/PageLoading';
+import { parseAgendaItems } from '../../lib/agenda';
 import { toLocalDateTimeInputs } from '../../lib/dateInputs';
 
 const DEFAULT_MEETING_LINK = 'https://meet.google.com/forgeloom-mentor-1';
@@ -33,6 +34,7 @@ export function SessionsPage() {
   const [studentEmail, setStudentEmail] = useState('');
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
+  const [agendaText, setAgendaText] = useState('');
   const [scheduleError, setScheduleError] = useState<string | null>(null);
   
   const { data: assignedStudents } = useAssignedStudents();
@@ -51,6 +53,11 @@ export function SessionsPage() {
   const [customLink, setCustomLink] = useState('');
   const [copiedLink, setCopiedLink] = useState(false);
 
+  // Inline Agenda editor state
+  const [isEditingAgenda, setIsEditingAgenda] = useState(false);
+  const [customAgenda, setCustomAgenda] = useState('');
+  const [agendaError, setAgendaError] = useState<string | null>(null);
+
   // Reschedule modal state
   const [rescheduleOpen, setRescheduleOpen] = useState(false);
   const [rescheduleDate, setRescheduleDate] = useState('');
@@ -59,7 +66,7 @@ export function SessionsPage() {
 
   const activeMeetingLink = selected?.meetingLink || DEFAULT_MEETING_LINK;
 
-  // Sync attendance and meeting link state when selected session changes
+  // Sync attendance, agenda, and meeting link state when selected session changes
   useEffect(() => {
     if (selected?.note && selected.note.includes('Attendance:')) {
       setAttendanceSaved(true);
@@ -68,7 +75,24 @@ export function SessionsPage() {
     }
     setIsEditingLink(false);
     setCustomLink(selected?.meetingLink || DEFAULT_MEETING_LINK);
-  }, [selected?.id, selected?.note, selected?.meetingLink]);
+    setIsEditingAgenda(false);
+    setCustomAgenda((selected?.agenda ?? []).join('\n'));
+    setAgendaError(null);
+  }, [selected?.id, selected?.note, selected?.meetingLink, selected?.agenda]);
+
+  async function handleSaveAgenda() {
+    if (!selected) return;
+    setAgendaError(null);
+    try {
+      await updateBooking.mutateAsync({
+        bookingId: selected.id,
+        agenda: parseAgendaItems(customAgenda),
+      });
+      setIsEditingAgenda(false);
+    } catch {
+      setAgendaError('Could not save agenda. Please try again.');
+    }
+  }
 
   function openRescheduleModal() {
     if (!selected) return;
@@ -169,16 +193,19 @@ export function SessionsPage() {
     if (!title || !studentEmail || !date || !time) return;
 
     setScheduleError(null);
+    const parsedAgenda = parseAgendaItems(agendaText);
     try {
       await scheduleSession.mutateAsync({
         studentEmail,
         title,
         scheduledAt: new Date(`${date}T${time}`).toISOString(),
+        agenda: parsedAgenda.length > 0 ? parsedAgenda : undefined,
       });
       setTitle('');
       setStudentEmail('');
       setDate('');
       setTime('');
+      setAgendaText('');
       setShowForm(false);
       setTab('Upcoming');
     } catch {
@@ -261,6 +288,22 @@ export function SessionsPage() {
                 required
                 value={time}
                 onChange={(e) => setTime(e.target.value)}
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <label
+                className="mb-1 block text-sm font-medium text-slate-700"
+                htmlFor="session-agenda"
+              >
+                Agenda <span className="font-normal text-slate-400">(optional, one topic per line)</span>
+              </label>
+              <textarea
+                id="session-agenda"
+                rows={3}
+                value={agendaText}
+                onChange={(e) => setAgendaText(e.target.value)}
+                placeholder={'Review Sprint 1 deliverables\nDiscuss database schema\nPlan next milestone'}
+                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               />
             </div>
             {scheduleError && <p className="text-sm text-red-600 sm:col-span-2">{scheduleError}</p>}
@@ -415,17 +458,70 @@ export function SessionsPage() {
               )}
             </div>
 
-            <h3 className="mb-2 text-sm font-semibold text-slate-900">Agenda</h3>
-            {selected.agenda.length === 0 && (
-              <p className="text-sm text-slate-400">No agenda set yet.</p>
-            )}
-            <div className="flex flex-col gap-2">
-              {selected.agenda.map((item) => (
-                <span key={item} className="flex items-center gap-2 text-sm text-slate-600">
-                  <CheckCircle2 size={14} className="text-slate-300" /> {item}
+            <div className="mb-2 flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-slate-900">Agenda</h3>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsEditingAgenda((prev) => !prev);
+                  setCustomAgenda((selected.agenda ?? []).join('\n'));
+                  setAgendaError(null);
+                }}
+                className="flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] font-medium text-slate-600 transition hover:bg-slate-50 cursor-pointer"
+              >
+                <Pencil size={11} />
+                <span>
+                  {isEditingAgenda
+                    ? 'Cancel'
+                    : selected.agenda.length === 0
+                      ? 'Add Agenda'
+                      : 'Edit'}
                 </span>
-              ))}
+              </button>
             </div>
+            {isEditingAgenda ? (
+              <div className="space-y-2">
+                <textarea
+                  rows={3}
+                  value={customAgenda}
+                  onChange={(e) => setCustomAgenda(e.target.value)}
+                  placeholder={'One topic per line, e.g.\nReview Sprint 1 deliverables\nPlan next steps'}
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+                {agendaError && <p className="text-xs text-red-600">{agendaError}</p>}
+                <div className="flex justify-end gap-2">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => setIsEditingAgenda(false)}
+                    className="text-xs px-3 py-1"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={handleSaveAgenda}
+                    disabled={updateBooking.isPending}
+                    className="text-xs px-3 py-1"
+                  >
+                    {updateBooking.isPending ? 'Saving…' : 'Save Agenda'}
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <>
+                {selected.agenda.length === 0 && (
+                  <p className="text-sm text-slate-400">No agenda set yet.</p>
+                )}
+                <div className="flex flex-col gap-2">
+                  {selected.agenda.map((item) => (
+                    <span key={item} className="flex items-center gap-2 text-sm text-slate-600">
+                      <CheckCircle2 size={14} className="text-slate-300" /> {item}
+                    </span>
+                  ))}
+                </div>
+              </>
+            )}
 
             {/* Compact Session Attendance Bar */}
             <div className="mt-6 border-t border-slate-100 pt-5">
