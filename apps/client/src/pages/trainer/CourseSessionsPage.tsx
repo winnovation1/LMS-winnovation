@@ -1,3 +1,4 @@
+
 import { useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { CalendarPlus, CheckCircle2, GraduationCap, XCircle } from 'lucide-react';
@@ -48,9 +49,9 @@ export function CourseSessionsPage() {
   const markAttendance = useMarkAttendance(courseId);
   const createAssessment = useCreateAssessment(courseId);
   const issueCertificate = useIssueCertificate(courseId);
+
   const [certificateError, setCertificateError] = useState<string | null>(null);
   const [issuingFor, setIssuingFor] = useState<string | null>(null);
-
   const [attendanceSession, setAttendanceSession] = useState<CourseSessionDto | null>(null);
   const [marks, setMarks] = useState<Record<string, AttendanceStatus>>({});
   const [cancelSession, setCancelSession] = useState<CourseSessionDto | null>(null);
@@ -71,6 +72,8 @@ export function CourseSessionsPage() {
   }
 
   function openAttendance(session: CourseSessionDto) {
+    if (session.status === 'cancelled') return;
+
     setAttendanceSession(session);
     setMarks({});
     setActionError(null);
@@ -78,7 +81,9 @@ export function CourseSessionsPage() {
 
   async function submitAttendance() {
     if (!attendanceSession || !roster) return;
+
     setActionError(null);
+
     try {
       await markAttendance.mutateAsync({
         sessionId: attendanceSession.id,
@@ -87,6 +92,7 @@ export function CourseSessionsPage() {
           status: marks[entry.studentId] ?? 'present',
         })),
       });
+
       setAttendanceSession(null);
     } catch {
       setActionError('Could not submit attendance. Please try again.');
@@ -101,13 +107,16 @@ export function CourseSessionsPage() {
 
   async function confirmCancel() {
     if (!cancelSession || !cancelReason.trim()) return;
+
     setActionError(null);
+
     try {
       await updateSession.mutateAsync({
         sessionId: cancelSession.id,
         status: 'cancelled',
         cancelReason: cancelReason.trim(),
       });
+
       setCancelSession(null);
     } catch {
       setActionError('Could not cancel this session. Please try again.');
@@ -117,6 +126,7 @@ export function CourseSessionsPage() {
   async function handleIssueCertificate(enrollmentId: string) {
     setCertificateError(null);
     setIssuingFor(enrollmentId);
+
     try {
       await issueCertificate.mutateAsync(enrollmentId);
     } catch {
@@ -128,12 +138,14 @@ export function CourseSessionsPage() {
 
   async function handleAddAssessment() {
     if (!assessmentTitle.trim() || !assessmentDate) return;
+
     try {
       await createAssessment.mutateAsync({
         title: assessmentTitle.trim(),
         type: assessmentType,
         scheduledDate: new Date(assessmentDate).toISOString(),
       });
+
       setAssessmentTitle('');
       setAssessmentDate('');
     } catch {
@@ -154,10 +166,12 @@ export function CourseSessionsPage() {
         <h2 className="mb-3 flex items-center gap-2 font-semibold text-slate-900">
           <CalendarPlus size={16} /> Assessments
         </h2>
+
         <div className="mb-4 flex flex-col divide-y divide-slate-100">
           {assessments?.length === 0 && (
             <p className="py-2 text-sm text-slate-400">No assessments scheduled yet.</p>
           )}
+
           {assessments?.map((assessment) => (
             <div
               key={assessment.id}
@@ -167,12 +181,14 @@ export function CourseSessionsPage() {
                 <p className="text-sm font-medium text-slate-800">{assessment.title}</p>
                 <Badge tone="amber">{assessment.type}</Badge>
               </div>
+
               <span className="text-xs text-slate-500">
                 {new Date(assessment.scheduledDate).toLocaleDateString()}
               </span>
             </div>
           ))}
         </div>
+
         <div className="flex flex-wrap items-center gap-2">
           <Input
             placeholder="Title"
@@ -180,6 +196,7 @@ export function CourseSessionsPage() {
             value={assessmentTitle}
             onChange={(e) => setAssessmentTitle(e.target.value)}
           />
+
           <select
             value={assessmentType}
             onChange={(e) => setAssessmentType(e.target.value as AssessmentType)}
@@ -191,11 +208,13 @@ export function CourseSessionsPage() {
               </option>
             ))}
           </select>
+
           <Input
             type="date"
             value={assessmentDate}
             onChange={(e) => setAssessmentDate(e.target.value)}
           />
+
           <Button
             onClick={handleAddAssessment}
             disabled={createAssessment.isPending || !assessmentTitle.trim() || !assessmentDate}
@@ -209,17 +228,23 @@ export function CourseSessionsPage() {
         <h2 className="mb-3 flex items-center gap-2 font-semibold text-slate-900">
           <GraduationCap size={16} /> Students
         </h2>
-        {certificateError && <p className="mb-2 text-xs text-red-600">{certificateError}</p>}
+
+        {certificateError && (
+          <p className="mb-2 text-xs text-red-600">{certificateError}</p>
+        )}
+
         <div className="flex flex-col divide-y divide-slate-100">
           {roster?.length === 0 && (
             <p className="py-2 text-sm text-slate-400">No enrolled students yet.</p>
           )}
+
           {roster?.map((entry) => (
             <div
               key={entry.studentId}
               className="flex items-center justify-between gap-3 py-2 first:pt-0 last:pb-0"
             >
               <span className="text-sm text-slate-700">{entry.email}</span>
+
               {entry.enrollmentStatus === 'completed' ? (
                 <Badge tone="green">Certificate Issued</Badge>
               ) : (
@@ -250,26 +275,51 @@ export function CourseSessionsPage() {
       <div className="flex flex-col gap-3">
         {sortedSessions.map((session) => {
           const badge = STATUS_BADGE[session.status];
+
           return (
-            <Card key={session.id} className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <p className="text-sm font-medium text-slate-900">Day {session.dayNumber}</p>
+            <Card
+              key={session.id}
+              className="flex flex-wrap items-center justify-between gap-3"
+            >
+              <button
+                type="button"
+                disabled={session.status === 'cancelled'}
+                onClick={() => openAttendance(session)}
+                className="flex-1 cursor-pointer text-left disabled:cursor-not-allowed"
+              >
+                <p className="text-sm font-semibold text-slate-900 hover:text-blue-600">
+                  Day {session.dayNumber}
+                </p>
+
                 <p className="text-xs text-slate-500">
                   {new Date(session.scheduledDate).toLocaleDateString()}
                   {session.status === 'cancelled' && session.cancelReason
                     ? ` · Cancelled: ${session.cancelReason}`
                     : ''}
                 </p>
-              </div>
+
+                {session.status !== 'cancelled' && (
+                  <p className="mt-1 text-xs text-blue-600">
+                    {session.status === 'completed'
+                      ? 'Click to view attendance'
+                      : 'Click to mark attendance'}
+                  </p>
+                )}
+              </button>
+
               <div className="flex items-center gap-2">
                 <Badge tone={badge.tone}>{badge.label}</Badge>
+
                 {session.status === 'scheduled' && (
-                  <>
-                    <Button variant="secondary" onClick={() => openCancel(session)}>
-                      Cancel
-                    </Button>
-                    <Button onClick={() => openAttendance(session)}>Take Attendance</Button>
-                  </>
+                  <Button variant="secondary" onClick={() => openCancel(session)}>
+                    Cancel
+                  </Button>
+                )}
+
+                {session.status !== 'cancelled' && (
+                  <Button onClick={() => openAttendance(session)}>
+                    {session.status === 'completed' ? 'View Attendance' : 'Take Attendance'}
+                  </Button>
                 )}
               </div>
             </Card>
@@ -283,26 +333,35 @@ export function CourseSessionsPage() {
             <h2 className="mb-1 text-lg font-semibold text-slate-900">
               Attendance — Day {attendanceSession.dayNumber}
             </h2>
+
             <p className="mb-4 text-sm text-slate-500">
-              Mark each student, then submit. Submitting also marks this session completed.
+              {attendanceSession.status === 'completed'
+                ? 'This session is completed. Attendance records are not loaded by this form yet.'
+                : 'Mark each student, then submit. Submitting also marks this session completed.'}
             </p>
+
             <div className="mb-4 flex max-h-72 flex-col gap-2 overflow-y-auto">
               {roster?.length === 0 && (
                 <p className="text-sm text-slate-400">No enrolled students yet.</p>
               )}
+
               {roster?.map((entry) => (
                 <div
                   key={entry.studentId}
                   className="flex items-center justify-between gap-2 rounded-lg border border-slate-200 p-2"
                 >
                   <span className="text-sm text-slate-700">{entry.email}</span>
+
                   <div className="flex gap-1">
                     {ATTENDANCE_OPTIONS.map((opt) => (
                       <button
                         key={opt.value}
                         type="button"
                         onClick={() =>
-                          setMarks((prev) => ({ ...prev, [entry.studentId]: opt.value }))
+                          setMarks((prev) => ({
+                            ...prev,
+                            [entry.studentId]: opt.value,
+                          }))
                         }
                         className={`rounded-md px-2 py-1 text-xs font-medium transition-colors ${
                           (marks[entry.studentId] ?? 'present') === opt.value
@@ -317,22 +376,29 @@ export function CourseSessionsPage() {
                 </div>
               ))}
             </div>
-            {actionError && <p className="mb-3 text-sm text-red-600">{actionError}</p>}
+
+            {actionError && (
+              <p className="mb-3 text-sm text-red-600">{actionError}</p>
+            )}
+
             <div className="flex gap-3">
               <Button
                 variant="secondary"
                 className="flex-1"
                 onClick={() => setAttendanceSession(null)}
               >
-                Cancel
+                Close
               </Button>
-              <Button
-                className="flex-1"
-                onClick={submitAttendance}
-                disabled={markAttendance.isPending || (roster?.length ?? 0) === 0}
-              >
-                {markAttendance.isPending ? 'Submitting…' : 'Submit Attendance'}
-              </Button>
+
+              {attendanceSession.status === 'scheduled' && (
+                <Button
+                  className="flex-1"
+                  onClick={submitAttendance}
+                  disabled={markAttendance.isPending || (roster?.length ?? 0) === 0}
+                >
+                  {markAttendance.isPending ? 'Submitting…' : 'Submit Attendance'}
+                </Button>
+              )}
             </div>
           </>
         )}
@@ -347,9 +413,11 @@ export function CourseSessionsPage() {
                 Cancel Day {cancelSession.dayNumber}
               </h2>
             </div>
+
             <label className="mb-1 block text-sm font-medium text-slate-700">
               Reason (required)
             </label>
+
             <textarea
               value={cancelReason}
               onChange={(e) => setCancelReason(e.target.value)}
@@ -357,11 +425,20 @@ export function CourseSessionsPage() {
               className="mb-3 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               placeholder="e.g. Trainer unavailable, venue conflict…"
             />
-            {actionError && <p className="mb-3 text-sm text-red-600">{actionError}</p>}
+
+            {actionError && (
+              <p className="mb-3 text-sm text-red-600">{actionError}</p>
+            )}
+
             <div className="flex gap-3">
-              <Button variant="secondary" className="flex-1" onClick={() => setCancelSession(null)}>
+              <Button
+                variant="secondary"
+                className="flex-1"
+                onClick={() => setCancelSession(null)}
+              >
                 Back
               </Button>
+
               <Button
                 className="flex-1"
                 onClick={confirmCancel}
@@ -375,8 +452,9 @@ export function CourseSessionsPage() {
       </Modal>
 
       <div className="mt-6 flex items-center gap-2 text-xs text-slate-400">
-        <CheckCircle2 size={14} /> Cancelled sessions are shown in red and are always
-        distinguishable from an absence — a cancelled class never counts against a student.
+        <CheckCircle2 size={14} />
+        Cancelled sessions are shown in red and are always distinguishable from an absence — a
+        cancelled class never counts against a student.
       </div>
     </div>
   );

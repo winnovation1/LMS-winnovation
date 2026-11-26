@@ -226,6 +226,9 @@ model User {
   communityVolunteerOf    CommunityVolunteer[]
   postedProblemStatements ProblemStatement[]      @relation("ProblemStatementPostedBy")
   milestoneFeedbackGiven  MilestoneFeedback[]
+  talentShortlists        TalentShortlist[]
+  hrMessagesSent          HrMessage[]             @relation("HrMessageSender")
+  hrMessagesReceived      HrMessage[]             @relation("HrMessageRecipient")
 
   // Soft/nullable "assigned to" relations (SetNull — see §2)
   coursesAsTrainer        Course[]                @relation("CourseTrainer")
@@ -258,6 +261,7 @@ model StudentProfile {
   updatedAt      DateTime @updatedAt
 
   teamMemberships TeamMember[]
+  shortlistedBy   TalentShortlist[]
 
   // Talent Pool scoping/filter — mirrors Mongo compound index {collegeId,domain,builderScore desc}
   @@index([collegeId, domain, builderScore(sort: Desc)])
@@ -330,6 +334,33 @@ model HrProfile {
   updatedAt      DateTime @updatedAt
 
   placements     Placement[]
+}
+
+// An HR user's saved candidates from the Talent Pool. Keyed on the student
+// *profile* id because that's the id the Talent Pool API exposes.
+model TalentShortlist {
+  hrUserId         String
+  hrUser           User           @relation(fields: [hrUserId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  studentProfileId String
+  studentProfile   StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  createdAt        DateTime       @default(now())
+
+  @@id([hrUserId, studentProfileId])
+}
+
+// One-way outreach from HR to a student. The student is told via an
+// `hr_message` Notification; this table is the durable record. No updatedAt.
+model HrMessage {
+  id            String   @id @default(cuid())
+  hrUserId      String
+  hrUser        User     @relation("HrMessageSender", fields: [hrUserId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  studentUserId String
+  student       User     @relation("HrMessageRecipient", fields: [studentUserId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  body          String
+  createdAt     DateTime @default(now())
+
+  @@index([hrUserId, studentUserId])
+  @@index([studentUserId, createdAt(sort: Desc)])
 }
 
 model SponsorProfile {

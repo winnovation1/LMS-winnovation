@@ -3,11 +3,17 @@ import { Role } from '@forge-loom/shared-types';
 import { authenticate } from '../../middleware/authenticate.js';
 import { authorize } from '../../middleware/authorize.js';
 import { asyncHandler } from '../../utils/asyncHandler.js';
-import { bookmark, create, interest, list } from './problemStatement.controller.js';
+import { bookmark, create, interest, list, listMine } from './problemStatement.controller.js';
 
 export const problemStatementRouter = Router();
 
 problemStatementRouter.get('/', authenticate, asyncHandler(list));
+problemStatementRouter.get(
+  '/mine',
+  authenticate,
+  authorize(Role.ForgeAdmin, Role.Hr),
+  asyncHandler(listMine)
+);
 problemStatementRouter.post(
   '/',
   authenticate,

@@ -19,6 +19,7 @@ import {
 import { useStudentActivity, useStudentCourses } from '../../features/student/hooks';
 import type { CourseStatus } from '../../features/student/types';
 import { PageLoading } from '../../components/ui/PageLoading';
+import { useUrlSearchQuery } from '../../lib/useUrlSearchQuery';
 
 type TabValue = 'all' | CourseStatus;
 
@@ -35,7 +36,7 @@ export function CoursesPage() {
   const { data: activityData, isLoading: activityLoading } = useStudentActivity();
 
   const [tab, setTab] = useState<TabValue>('all');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useUrlSearchQuery();
 
   // Filter courses based on active tab and search input
   const filteredCourses = useMemo(() => {
@@ -63,43 +64,9 @@ export function CoursesPage() {
     return { enrolled, inProgress, completed, upcoming, dropped, overallPercent };
   }, [courses]);
 
-  // Default recent activity list matching the reference image
-  const recentActivity = [
-    {
-      id: 'act-1',
-      title: 'Completed Lesson 12',
-      course: 'Full Stack Web Development',
-      timeAgo: '2h ago',
-      icon: CheckCircle2,
-      color: 'bg-emerald-50 text-emerald-600 border border-emerald-100/70',
-    },
-    {
-      id: 'act-2',
-      title: 'Submitted Assignment',
-      course: 'Data Structures & Algorithms',
-      timeAgo: '5h ago',
-      icon: FileText,
-      color: 'bg-purple-50 text-purple-600 border border-purple-100/70',
-    },
-    {
-      id: 'act-3',
-      title: 'Watched Lesson 8',
-      course: 'UI/UX Design Fundamentals',
-      timeAgo: '1d ago',
-      icon: Video,
-      color: 'bg-blue-50 text-[#2161F5] border border-blue-100/70',
-    },
-    {
-      id: 'act-4',
-      title: 'Scored 85% in Quiz',
-      course: 'Cyber Security Basics',
-      timeAgo: '2d ago',
-      icon: Trophy,
-      color: 'bg-amber-50 text-amber-600 border border-amber-100/70',
-    },
-  ];
+const recentActivity =(courses ??[]).map((c, i) =>({ id: c.id +'-' + i, title:'Enrolled in course',course: c.name, timeAgo: c.updatedLabel, icon: BookOpen,color: 'bg-blue-50 text-[#2161F5] border border-blue-100/70'}));
 
-  if (coursesLoading || activityLoading) {
+  if (coursesLoading) {
     return <PageLoading />;
   }
 
@@ -252,9 +219,9 @@ export function CoursesPage() {
           ) : (
             /* ACTIVE COURSES LIST (If courses exist) */
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {filteredCourses.map((course) => (
+              {filteredCourses.map((course,idx) => (
                 <Link
-                  key={course.id}
+                  key={course.id +'-' + idx}
                   to={`/student/courses/${course.id}`}
                   className="course-card forge-dashboard-card p-5 flex flex-col justify-between group hover:border-blue-200/80 transition-all"
                 >

@@ -1,4 +1,5 @@
 import express, { type Express } from 'express';
+import{studentStatsRouter} from'./modules/studentStats/studentStats.routes.js';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
@@ -25,6 +26,7 @@ import { communityRouter } from './modules/community/community.routes.js';
 import { speakerTopicRouter } from './modules/speakerTopics/speakerTopic.routes.js';
 import { talentPoolRouter } from './modules/talentPool/talentPool.routes.js';
 import { hrProfileRouter } from './modules/hrProfile/hrProfile.routes.js';
+import { courseAdminProfileRouter } from './modules/courseAdminProfile/courseAdminProfile.routes.js';
 import { communityMemberRouter } from './modules/communityMembers/communityMember.routes.js';
 import { adminRouter } from './modules/admin/admin.routes.js';
 import { notFoundHandler, errorHandler } from './middleware/errorHandler.js';
@@ -48,6 +50,7 @@ export function createApp(): Express {
   app.use('/api/auth', authRouter);
   app.use('/api/courses', courseRouter);
   app.use('/api/enrollments', enrollmentRouter);
+  app.use('/api/student-stats', studentStatsRouter);
   app.use('/api/catalog', catalogRouter);
   app.use('/api/sessions', sessionRouter);
   app.use('/api/students', studentAttendanceRouter);
@@ -67,6 +70,7 @@ export function createApp(): Express {
   app.use('/api/speaker-topics', speakerTopicRouter);
   app.use('/api/talent-pool', talentPoolRouter);
   app.use('/api/hr-profile', hrProfileRouter);
+  app.use('/api/course-admin-profile', courseAdminProfileRouter);
   app.use('/api/community-members', communityMemberRouter);
   app.use('/api/admin', adminRouter);
 

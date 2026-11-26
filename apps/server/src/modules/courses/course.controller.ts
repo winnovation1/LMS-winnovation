@@ -1,4 +1,5 @@
 import type { Request, Response } from 'express';
+import type { CourseAdminCourseDto, TrainerOptionDto } from '@forge-loom/shared-types';
 import { ApiError } from '../../utils/ApiError.js';
 import {
   createCourseSchema,
@@ -31,6 +32,18 @@ export async function create(req: Request, res: Response): Promise<void> {
   res.status(201).json({ course: toCourseDto(course) });
 }
 
+export async function getForEditing(req: Request, res: Response): Promise<void> {
+  const user = requireUser(req);
+  const course = await courseService.getCourseForEditing(user.userId, requireParam(req, 'id'));
+  res.json({ course: toCourseDto(course) });
+}
+
+export async function remove(req: Request, res: Response): Promise<void> {
+  const user = requireUser(req);
+  await courseService.deleteCourse(user.userId, requireParam(req, 'id'));
+  res.status(204).end();
+}
+
 export async function update(req: Request, res: Response): Promise<void> {
   const user = requireUser(req);
   const input = updateCourseSchema.parse(req.body);
@@ -51,8 +64,21 @@ export async function updateStatus(req: Request, res: Response): Promise<void> {
 
 export async function listMine(req: Request, res: Response): Promise<void> {
   const user = requireUser(req);
-  const courses = await courseService.listMyCourses(user.userId);
-  res.json({ courses: courses.map(toCourseDto) });
+  const rows = await courseService.listMyCourses(user.userId);
+  res.json({
+    courses: rows.map(
+      ({ course, stats, trainerEmail }): CourseAdminCourseDto => ({
+        ...toCourseDto(course),
+        stats,
+        trainerEmail,
+      })
+    ),
+  });
+}
+
+export async function listTrainers(_req: Request, res: Response): Promise<void> {
+  const trainers: TrainerOptionDto[] = await courseService.listAssignableTrainers();
+  res.json({ trainers });
 }
 
 export async function list(req: Request, res: Response): Promise<void> {
