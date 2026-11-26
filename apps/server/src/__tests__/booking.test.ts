@@ -54,12 +54,14 @@ describe('bookings reschedule & meeting links', () => {
         counterpartEmail: student.email,
         title: 'Sprint 1 Check-in',
         scheduledAt: initialAt,
+        agenda: ['Review architecture', 'Plan Sprint 2'],
       });
 
     expect(created.status).toBe(201);
     const bookingId = created.body.booking.id as string;
     createdBookingIds.push(bookingId);
     expect(created.body.booking.meetingLink).toBe('https://meet.google.com/forgeloom-mentor-1');
+    expect(created.body.booking.agenda).toEqual(['Review architecture', 'Plan Sprint 2']);
 
     // Invalid date rejected with 400
     const badReschedule = await request(app)
