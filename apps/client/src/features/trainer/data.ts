@@ -68,7 +68,7 @@ export function useTrainerTeams() {
         return (res.teams ?? []).map<TrainerTeam>((t) => ({
           id: t.id,
           name: t.name,
-          problemStatementTitle: t.problemStatementId ? 'Citadel Project' : 'Unassigned',
+          problemStatementTitle: t.problemStatement?.title ?? 'Citadel Project',
           sprintStatus: 'Active',
         }));
       } catch {
